@@ -62,7 +62,7 @@ select,
 }
 
 .table-style td {
-  @apply text-center p-4 text-sm;
+  @apply text-center p-4 text-sm min-w-25;
 }
 
 .table-style td.rowHeader {

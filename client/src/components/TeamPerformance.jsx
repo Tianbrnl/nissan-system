@@ -18,13 +18,13 @@ export default function TeamPerformance({ teams = [] }) {
         )
     }
 
-    teams = teams?.map(team => ({ name: team?.name, units: team?.data?.reduce((sum, num) => sum + num, 0) ?? 0 }));
+    // teams = teams?.map(team => ({ name: team?.name, units: team?.data?.reduce((sum, num) => sum + num, 0) ?? 0 }));
 
     return (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart data={teams}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="team" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="units" fill="#3b82f6" radius={[8, 8, 0, 0]} />

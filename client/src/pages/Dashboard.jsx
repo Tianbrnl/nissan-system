@@ -1,46 +1,112 @@
-import { CircleCheckBig, Target, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { CircleCheckBig, Target, TrendingUp, Users } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import ReservationByTeam from "../components/ReservationByTeam";
 import TargetActual from "../components/TargetActual";
 import MonthlySalesTrend from "../components/MonthlySalesTrend";
 import PaymentTermDistribution from "../components/PaymenTermDistribution";
+import { useEffect } from "react";
+import { fetchDashboardTotals, paymentTermDistribution, reservationByTeam } from "../services/dashboardServices";
+import { useState } from "react";
 
 export default function Dashboard() {
 
 
-    const totals = [
+    const [totals, setTotals] = useState([
         {
             Icom: Target,
             name: 'ToTal Sales',
-            total: 125,
-            rate: 8
+            total: 0
         },
         {
             Icom: TrendingUp,
             name: 'YTD Sales',
-            total: 75,
-            rate: 8
+            total: 0
         },
         {
             Icom: Users,
             name: 'Total Reservations',
-            total: 92,
-            rate: 12
+            total: 0
         },
         {
             Icom: CircleCheckBig,
             name: 'Approval Rate',
-            total: '68%',
-            rate: 4
+            total: '0%'
+        }
+    ]);
+
+    const [paymentTerm, setPaymentTerm] = useState([
+        {
+            "name": "Cash",
+            "data": 0
         },
         {
-            Icom: Target,
-            name: 'Projected 2026 Sales',
-            total: 580,
-            rate: 5
+            "name": "Financing",
+            "data": 0
+        },
+        {
+            "name": "Bank OP",
+            "data": 0
         }
-    ]
+    ]);
+
+    const [teams, setTeams] = useState([]);
+
+    const loadTotals = async () => {
+        const { success, message, totals: apiTotals } = await fetchDashboardTotals();
+
+        if (!success) {
+            console.error(message);
+            return;
+        }
+
+        setTotals([
+            {
+                Icom: Target,
+                name: 'Total Sales',
+                total: apiTotals.totalSales
+            },
+            {
+                Icom: TrendingUp,
+                name: 'YTD Sales',
+                total: apiTotals.yearTodaySales
+            },
+            {
+                Icom: Users,
+                name: 'Total Reservations',
+                total: apiTotals.totalReservation
+            },
+            {
+                Icom: CircleCheckBig,
+                name: 'Approval Rate',
+                total: `${apiTotals.approvalRate}%`
+            }
+        ]);
+    };
+
+    const loadPaymentTermDistribution = async () => {
+        const { success, message, paymentTerm: apiPaymentTerm } = await paymentTermDistribution();
+        if (success) return setPaymentTerm(apiPaymentTerm);
+        console.error(message);
+    }
+
+    const loadReservationByTeam = async () => {
+        const { success, message, teams: apiTeams } = await reservationByTeam();
+        if (success) return setTeams(apiTeams);
+        console.error(message);
+    }
+
+    useEffect(() => {
+        try {
+            queueMicrotask(() => {
+                loadTotals();
+                loadPaymentTermDistribution();
+                loadReservationByTeam();
+            })
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -56,10 +122,6 @@ export default function Dashboard() {
                             <div className="grow flex gap-2 flex-col">
                                 <p className="text-sm">{total.name}</p>
                                 <h2 className="font-bold">{total.total}</h2>
-                                <div className={`flex items-center gap-2 ${total.rate > 0 ? 'text-green-600' : 'text-nissan-red'}`}>
-                                    {total.rate > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                                    <p>{total.rate}%</p>
-                                </div>
                             </div>
                             <div className="h-fit p-2 rounded-lg bg-blue-50 text-blue-600">
                                 <total.Icom />
@@ -83,13 +145,13 @@ export default function Dashboard() {
                     <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                         <p className="text-lg font-semibold">Payment Term Distribution</p>
                         <div className="h-70">
-                            <PaymentTermDistribution />
+                            <PaymentTermDistribution paymentTerm={paymentTerm} />
                         </div>
                     </div>
                     <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                         <p className="text-lg font-semibold">Reservation by Team</p>
                         <div className="h-70">
-                            <ReservationByTeam />
+                            <ReservationByTeam teams={teams} />
                         </div>
                     </div>
                 </section>

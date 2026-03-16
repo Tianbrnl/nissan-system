@@ -43,7 +43,7 @@ export default function TagInput({
             {value.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
                     {value.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2 border bg-nissan-red/10 text-nissan-red py-1 px-4 rounded-lg">
+                        <div key={index} className="flex items-center gap-2 bg-gray-200 py-1 px-4 rounded-lg">
                             <span className="whitespace-normal break-all text-sm">{item}</span>
                             <button
                                 className="cursor-pointer"

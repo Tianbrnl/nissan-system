@@ -1,0 +1,12 @@
+{
+  "name": "nissan-analytics-system",
+  "version": "1.0.0",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "npm run server --prefix server",
+    "client": "npm run dev --prefix client"
+  }
+}

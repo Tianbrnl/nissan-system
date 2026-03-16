@@ -30,7 +30,7 @@ const COLORS = [
     "#F59E0B"
 ];
 
-export default function ModelDistribution() {
+export default function UnitDistribution() {
 
     return (
         <ResponsiveContainer width="100%" height="100%">
