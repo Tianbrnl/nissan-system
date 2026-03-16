@@ -3,6 +3,7 @@ export default function Textarea({
     disabled = false,
     required = false,
     name,
+    value,
     placeholder,
     onChange = () => { }
 }) {
@@ -13,6 +14,7 @@ export default function Textarea({
                 name={name}
                 placeholder={placeholder}
                 disabled={disabled}
+                value={value}
                 className="textarea w-full resize-none field-sizing-content"
                 onChange={onChange}
             />

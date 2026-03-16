@@ -2,17 +2,18 @@ import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { useState } from "react";
-import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../components/ui/ui-modal";
-import Select from "../components/ui/Select";
-import Input from "../components/ui/Input";
-import TagInput from "../components/ui/TagInput";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import CreateVariant from "../components/VehicleReports/CreateVariant";
+import UpdateUnit from "../components/VehicleReports/UpdateUnit";
+import UpdateVariant from "../components/VehicleReports/UpdateVariant";
 
 export default function VehicleReports() {
 
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [editModal, setEditModal] = useState(false);
-    const [showEdit3, setShowEdit3] = useState(false);
+    const [showCreateVariant, setShowCreateVariant] = useState(false);
+    const [showUpdateVariant, setShowUpdateVariant] = useState(false);
+    const [showUpdateUnit, setShowUpdateUnit] = useState(false);
+
+    const [unitId, setUnitId] = useState(null);
 
     const dates = [
         { value: '', name: 'DEC 2025' },
@@ -33,47 +34,47 @@ export default function VehicleReports() {
         vehicles: [
 
             {
-                id: 1,
+                id: 2,
                 name: 'Kicks',
                 data: [12, 15, 18, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 2,
+                id: 3,
                 name: 'E26',
                 data: [6, 9, 12, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 3,
+                id: 4,
                 name: 'N18',
                 data: [6, 9, 12, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 4,
+                id: 5,
                 name: 'Patrol',
                 data: [2, 5, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 5,
+                id: 6,
                 name: 'D23',
                 data: [9, 12, 15, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 6,
+                id: 7,
                 name: 'Terra',
                 data: [5, 8, 11, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 7,
+                id: 8,
                 name: 'Livina',
                 data: [3, 6, 9, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 8,
+                id: 9,
                 name: 'Nissan Z',
                 data: [1, 4, 7, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             {
-                id: 9,
+                id: 10,
                 name: 'Prem',
                 data: [1, 4, 7, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             }
@@ -99,6 +100,7 @@ export default function VehicleReports() {
         ],
         totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     }
+
 
     const reservationByTeam = {
         teams: [
@@ -126,9 +128,10 @@ export default function VehicleReports() {
     }
 
     const handleEditModel = (modelId) => {
-        console.log(modelId);
-        setEditModal(true);
+        setUnitId(modelId);
+        setShowUpdateUnit(true);
     }
+
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -147,13 +150,19 @@ export default function VehicleReports() {
                 {/* Vehicle Sales by Model (Monthly) */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Vehicle Sales by Model (Monthly)</p>
+                        <p className="text-lg font-semibold">Vehicle Sales by Units (Monthly)</p>
                         <div className="flex gap-2">
                             <button
-                                className="btn btn-ghost rounded-xl"
-                                onClick={() => setShowAddModal(true)}
+                                className="btn rounded-xl"
+                                onClick={() => setShowCreateVariant(true)}
                             >
                                 <Plus size={16} />
+                            </button>
+                            <button
+                                className="btn rounded-xl"
+                                onClick={() => setShowUpdateVariant(true)}
+                            >
+                                <Pen size={16} />
                             </button>
                             <button className="btn bg-nissan-red text-white rounded-xl">
                                 <FileDown size={16} /> Export
@@ -165,7 +174,7 @@ export default function VehicleReports() {
                         <table>
                             <thead>
                                 <tr>
-                                    <td className="rowHeader">MODEL</td>
+                                    <td className="rowHeader">UNITS</td>
                                     {dates?.map((date, index) => (
                                         <td key={index}>{date?.name}</td>
                                     ))}
@@ -245,7 +254,7 @@ export default function VehicleReports() {
                         <table>
                             <thead>
                                 <tr>
-                                    <td className="rowHeader">MODEL</td>
+                                    <td className="rowHeader">PAYMENT TERM</td>
                                     {dates?.map((date, index) => (
                                         <td key={index}>{date?.name}</td>
                                     ))}
@@ -281,17 +290,10 @@ export default function VehicleReports() {
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
                         <p className="text-lg font-semibold">Reservation by Team (Monthly)</p>
-                        <div className="flex gap-2">
-                            <button
-                                className="btn btn-ghost rounded-xl"
-                                onClick={() => setShowEdit3(true)}
-                            >
-                                <Pen size={16} />
-                            </button>
-                            <button className="btn bg-nissan-red text-white rounded-xl">
-                                <FileDown size={16} /> Export
-                            </button>
-                        </div>
+
+                        <button className="btn bg-nissan-red text-white rounded-xl">
+                            <FileDown size={16} /> Export
+                        </button>
                     </div>
 
                     <div className="table-style">
@@ -331,101 +333,15 @@ export default function VehicleReports() {
 
             </div>
 
-            {/* Add Model */}
-            <ModalBackground show={showAddModal}>
-                <Modal maxWidth={600}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Add Model"
-                            subTitle="Vehicle Sales by Model"
-                            onClose={() => setShowAddModal(false)}
-                        />
+            {/* Create Variant */}
+            {showCreateVariant && <CreateVariant onClose={() => setShowCreateVariant(false)} />}
 
-                        <Input
-                            label="Model"
-                            required={true}
-                        />
+            {/* Update Unit */}
+            {showUpdateVariant && <UpdateVariant onClose={() => setShowUpdateVariant(false)} />}
 
-                        <TagInput
-                            label="Variant"
-                            required={true}
-                        />
+            {/* Update Unit */}
+            {showUpdateUnit && <UpdateUnit unitId={unitId} onClose={() => setShowUpdateUnit(false)} />}
 
-                        <ModalFooter
-                            submitLabel='Add Model'
-                            onClose={() => setShowAddModal(false)}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
-            {/* Edit Model */}
-            <ModalBackground show={editModal}>
-                <Modal maxWidth={600}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Edit Model"
-                            subTitle="Vehicle Sales by Model"
-                            onClose={() => setEditModal(false)}
-                        />
-
-                        <Input
-                            label="Model"
-                            required={true}
-                        />
-
-                        <TagInput
-                            label="Variant"
-                            required={true}
-                        />
-
-                        <ModalFooter
-                            submitLabel='Add Model'
-                            onClose={() => setEditModal(false)}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
-            <ModalBackground show={showEdit3}>
-                <Modal maxWidth={600}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Edit Monthly Data"
-                            subTitle="Reservation by Team"
-                            onClose={() => setShowEdit3(false)}
-                        />
-
-                        <Select
-                            label="Select Month"
-                            options={dates}
-                        />
-
-                        {reservationByTeam?.teams?.map((team, index) => (
-                            <div
-                                key={index}
-                                className="flex gap-4"
-                            >
-                                <div className="grow">
-                                    <Input
-                                        value={team?.name}
-                                    />
-                                </div>
-                                <Input
-                                    value={team?.data[0]}
-                                    type="number"
-                                />
-                            </div>
-                        ))}
-
-
-                        <ModalFooter
-                            submitLabel='Save Changes'
-                            onClose={() => setShowEdit3(false)}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
         </div>
     )
 }

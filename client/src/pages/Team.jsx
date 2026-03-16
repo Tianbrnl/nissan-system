@@ -2,52 +2,48 @@ import { Pen, Plus, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { useState } from "react";
-import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../components/ui/ui-modal";
-import Input from "../components/ui/Input";
-import { useForm } from "../hooks/form";
+import CreateTeam from "../components/Team/CreateTeam";
+import DeleteTeam from "../components/Team/DeleteTeam";
+import { useEffect } from "react";
+import { readAllTeam } from "../services/teamServices";
+import UpdateTeam from "../components/Team/UpdateTeam";
+
 
 export default function Team() {
 
-    const { formData, handleInputChange } = useForm({
-        teamCode: '',
-        teamLeader: ''
-    });
+    const [teamId, setTeamId] = useState(1);
 
     const [showAdd, setShowAdd] = useState(false);
-    const [showEdit, setShowEdit] = useState(false);
+    const [showUpdate, setShowUpdate] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
 
-    const teams = [
-        {
-            id: 1,
-            teamCode: 'NSR1',
-            teamLeader: 'Mike',
-        },
-        {
-            id: 2,
-            teamCode: 'NSR2',
-            teamLeader: 'Jhoven',
-        },
-        {
-            id: 3,
-            teamCode: 'NSR3',
-            teamLeader: 'Jayr',
-        }
-    ]
-
-    const handleSubmit = () => {
-        console.log(formData);
-    }
+    const [data, setData] = useState([]);
 
     const handleEdit = (teamId) => {
-        console.log(teamId);
-        setShowEdit(true);
-    }
+        setTeamId(teamId);
+        setShowUpdate(true);
+    };
 
     const handleDelete = (teamId) => {
-        console.log(teamId);
+        setTeamId(teamId);
         setShowDelete(true);
-    }
+    };
+
+    const loadTable = async () => {
+        const { success, message, teams } = await readAllTeam();
+        if (success) return setData(teams);
+        console.error(message);
+    };
+
+    useEffect(() => {
+        try {
+            queueMicrotask(() => {
+                loadTable();
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }, []);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -82,7 +78,7 @@ export default function Team() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {teams?.map(team => (
+                                {data?.map(team => (
                                     <tr key={team?.id}>
                                         <td className="flex gap-4 items-center font-semibold">
                                             <div className="flex-center bg-nissan-red text-white rounded-full text-lg h-10 w-10">
@@ -116,95 +112,14 @@ export default function Team() {
                 </div>
             </div>
 
-            {/* Add Team */}
-            <ModalBackground show={showAdd}>
-                <Modal>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Add New Team"
-                            onClose={() => setShowAdd(false)}
-                        />
+            {/* Create Team */}
+            {showAdd && <CreateTeam onClose={() => setShowAdd(false)} runAfter={loadTable} />}
 
-                        <Input
-                            label="Team Code"
-                            placeholder="e.g., NSR1, NSR2"
-                            name="color"
-                            required={true}
-                            value={formData?.color}
-                            onChange={handleInputChange}
-                        />
-                        <Input
-                            label="Team Leader / GRM Name"
-                            placeholder="e.g., Mike, Jhoven"
-                            name="csNumber"
-                            required={true}
-                            value={formData?.csNumber}
-                            onChange={handleInputChange}
-                        />
-
-                        <ModalFooter
-                            submitLabel='Add Team'
-                            onClose={() => setShowAdd(false)}
-                            onSubmit={handleSubmit}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
-            {/* Edit Team */}
-            <ModalBackground show={showEdit}>
-                <Modal>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Edit Team"
-                            onClose={() => setShowEdit(false)}
-                        />
-
-                        <Input
-                            label="Team Code"
-                            placeholder="e.g., NSR1, NSR2"
-                            name="color"
-                            required={true}
-                            value={formData?.color}
-                            onChange={handleInputChange}
-                        />
-                        <Input
-                            label="Team Leader / GRM Name"
-                            placeholder="e.g., Mike, Jhoven"
-                            name="csNumber"
-                            required={true}
-                            value={formData?.csNumber}
-                            onChange={handleInputChange}
-                        />
-
-                        <ModalFooter
-                            submitLabel='Save Changes'
-                            onClose={() => setShowEdit(false)}
-                            onSubmit={handleSubmit}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
+            {/* Update Team */}
+            {showUpdate && <UpdateTeam teamId={teamId} onClose={() => setShowUpdate(false)} runAfter={loadTable} />}
 
             {/* Delete Team */}
-            <ModalBackground show={showDelete}>
-                <Modal>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Delete Team"
-                            onClose={() => setShowDelete(false)}
-                        />
-
-                        <p className="text-gray-500">Are you sure you want to delete? This action cannot be undone and will affect all modules using this team.</p>
-
-                        <ModalFooter
-                            submitLabel='Delete Team'
-                            onClose={() => setShowDelete(false)}
-                            onSubmit={handleSubmit}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
+            {showDelete && <DeleteTeam teamId={teamId} onClose={() => setShowDelete(false)} runAfter={loadTable} />}
 
         </div >
     )

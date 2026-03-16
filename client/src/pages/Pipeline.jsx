@@ -1,33 +1,23 @@
 import { FileDown, Pen, Plus, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
-import { useState } from "react";
-import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../components/ui/ui-modal";
+import { useEffect, useState } from "react";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
-import Textarea from "../components/ui/Textarea";
-import { useForm } from "../hooks/form";
+import CreatePipeline from "../components/Pipeline/CreatePipeline";
+import UpdatePipeline from "../components/Pipeline/UpdatePipeline";
+import { readAllPipeline } from "../services/pipelineServices";
+import DeletePipeline from "../components/Pipeline/DeletePipeline";
 
 export default function Pipeline() {
 
-    const { formData, handleInputChange } = useForm({
-        closed: '',
-        targetReleased: '',
-        variant: '',
-        model: '',
-        color: '',
-        csNumber: '',
-        transaction: '',
-        bank: '',
-        client: '',
-        grm: '',
-        status: '',
-        monthStart: '',
-        remarks: '',
-    });
+    const [data, setData] = useState([]);
 
-    const [showAdd, setShowAdd] = useState(false);
-    const [showEdit, setShowEdit] = useState(false);
+    const [showCreate, setshowCreate] = useState(false);
+    const [showUpdate, setShowUpdate] = useState(false);
+    const [showDelete, setShowDelete] = useState(false);
+
+    const [pipelineId, setPipelineId] = useState(null);
 
     const totals = {
         entries: 3,
@@ -36,65 +26,34 @@ export default function Pipeline() {
         bankApproval: 1,
     }
 
-    const pipeline = [
-        {
-            id: 1,
-            closed: 'Jan 15, 2026',
-            targetRelease: 'Fed 1, 2026',
-            variantUnit: 'Nissan Patrol',
-            model: 'VL 4X4 AT',
-            color: 'Pearl White',
-            csNumber: 'CS-2026-001',
-            transaction: 'Financing',
-            bank: 'BDO',
-            client: 'John Doe',
-            grm: 'Mike',
-            status: 'For Release',
-            remarks: 'Pending Documents',
-            monthStart: 'Jan 2026'
-        },
-        {
-            id: 2,
-            closed: 'Jan 20, 2026',
-            targetRelease: 'Fed 10, 2026',
-            variantUnit: 'Nissan Kicks',
-            model: 'VL 4X4 AT',
-            color: 'Midnight Black',
-            csNumber: 'CS-2026-002',
-            transaction: 'Cash',
-            bank: null,
-            client: 'Jane Smith',
-            grm: 'Jhoven',
-            status: 'Sold',
-            remarks: 'Compelete',
-            monthStart: 'Jan 2026'
-        },
-        {
-            id: 3,
-            closed: 'Feb 5, 2026',
-            targetRelease: 'Fed 20, 2026',
-            variantUnit: 'Nissan Terra',
-            model: 'VL 4X4 AT',
-            color: 'Silver Metallic',
-            csNumber: 'CS-2026-003',
-            transaction: 'Bank OP',
-            bank: 'BPI',
-            client: 'Mark Johnson',
-            grm: 'Jayr',
-            status: 'For Bank Approval',
-            remarks: 'Awaiting bank response',
-            monthStart: 'Feb 2026'
-        }
-    ]
-
-    const handleSubmit = () => {
-        console.log(formData);
-    }
-
     const handleEdit = (id) => {
-        console.log(id);
-        setShowEdit(true);
+        setPipelineId(id);
+        setShowUpdate(true);
     }
+
+    const handleDelete = (id) => {
+        setPipelineId(id);
+        setShowDelete(true);
+
+    }
+
+    const loadTable = async () => {
+        const { success, message, pipelines } = await readAllPipeline();
+        if (success) {
+            return setData(pipelines);
+        }
+        console.error(message);
+    }
+
+    useEffect(() => {
+        try {
+            queueMicrotask(() => {
+                loadTable();
+            })
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -113,7 +72,7 @@ export default function Pipeline() {
                         </button>
                         <button
                             className="btn bg-nissan-red text-white rounded-xl"
-                            onClick={() => setShowAdd(true)}
+                            onClick={() => setshowCreate(true)}
                         >
                             <Plus size={16} /> Add Entry
                         </button>
@@ -154,8 +113,8 @@ export default function Pipeline() {
                                 <tr>
                                     <td>CLOSED</td>
                                     <td>TARGET RELEASE</td>
-                                    <td>VARIANT UNIT</td>
-                                    <td>MODEL</td>
+                                    <td>VARIANT</td>
+                                    <td>UNIT</td>
                                     <td>COLOR</td>
                                     <td>CS NUMBER</td>
                                     <td>TRANSACTION</td>
@@ -169,18 +128,18 @@ export default function Pipeline() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {pipeline?.map(sale => (
+                                {data?.map((sale, index) => (
                                     <tr key={sale?.id}>
-                                        <td>{sale?.closed ? sale?.closed : '-'}</td>
-                                        <td>{sale?.targetRelease ? sale?.targetRelease : '-'}</td>
-                                        <td>{sale?.variantUnit ? sale?.variantUnit : '-'}</td>
-                                        <td>{sale?.model ? sale?.model : '-'}</td>
+                                        <td>{index + 1}</td>
+                                        <td>{sale?.targetReleased ? sale?.targetReleased : '-'}</td>
+                                        <td>{sale?.unit?.variant?.name ? sale?.unit?.variant?.name : '-'}</td>
+                                        <td>{sale?.unit.name ? sale?.unit.name : '-'}</td>
                                         <td>{sale?.color ? sale?.color : '-'}</td>
                                         <td>{sale?.csNumber ? sale?.csNumber : '-'}</td>
                                         <td>{sale?.transaction ? sale?.transaction : '-'}</td>
                                         <td>{sale?.bank ? sale?.bank : '-'}</td>
                                         <td>{sale?.client ? sale?.client : '-'}</td>
-                                        <td>{sale?.grm ? sale?.grm : '-'}</td>
+                                        <td>{sale?.team?.teamLeader ? sale?.team?.teamLeader : '-'}</td>
                                         <td>
                                             <p className={`
                                                 ${sale?.status === 'Sold' ? 'text-green-600 bg-green-600/20' :
@@ -205,6 +164,7 @@ export default function Pipeline() {
                                                 </button>
                                                 <button
                                                     className="cursor-pointer"
+                                                    onClick={() => handleDelete(sale?.id)}
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
@@ -242,282 +202,31 @@ export default function Pipeline() {
                 </div>
             </div>
 
-            {/* Add Model */}
-            <ModalBackground show={showAdd}>
-                <Modal maxWidth={800}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Add Pipeline Entry"
-                            subTitle="Enter all transaction details"
-                            onClose={() => setShowAdd(false)}
-                        />
+            {/* Create Model */}
+            {showCreate &&
+                <CreatePipeline
+                    onClose={() => setshowCreate(false)}
+                    runAfter={loadTable}
+                />
+            }
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Closed"
-                                type="date"
-                                name="closed"
-                                required={true}
-                                value={formData?.closed}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Target Released Date"
-                                type="date"
-                                name="targetReleased"
-                                required={true}
-                                value={formData?.targetReleased}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Variant Unit"
-                                placeholder="Select Variant"
-                                name="variant"
-                                required={true}
-                                value={formData?.variant}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Model"
-                                placeholder="Select Model"
-                                name="model"
-                                required={true}
-                                value={formData?.model}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Color"
-                                placeholder="e.g. Pearl White"
-                                name="color"
-                                required={true}
-                                value={formData?.color}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="CS Number"
-                                placeholder="e.g. CS-2026-001"
-                                name="csNumber"
-                                required={true}
-                                value={formData?.csNumber}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Transaction"
-                                placeholder="Select Transaction"
-                                name="transaction"
-                                options={[
-                                    { value: 'Cash', name: 'Cash' },
-                                    { value: 'bank OP', name: 'bank OP' },
-                                    { value: 'Financing', name: 'Financing' }
-                                ]}
-                                required={true}
-                                value={formData?.transaction}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Bank"
-                                placeholder={formData?.transaction === 'Cash' ? "N/A for Cash" : "e.g. BDO, BPI"}
-                                name="bank"
-                                required={formData?.transaction !== 'Cash'}
-                                disabled={formData?.transaction === 'Cash'}
-                                value={formData?.bank}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Client"
-                                placeholder="Client name"
-                                name="client"
-                                required={true}
-                                value={formData?.client}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="GRM"
-                                placeholder="Select GRM"
-                                name="grm"
-                                required={true}
-                                value={formData?.grm}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Status"
-                                placeholder="Select Status"
-                                name="status"
-                                options={[
-                                    { value: "Sold", name: "Sold" },
-                                    { value: "For Release", name: "For Release" },
-                                    { value: "w/ Payment", name: "w/ Payment" },
-                                    { value: "For Bank Approval", name: "For Bank Approval" }
-                                ]}
-                                required={true}
-                                value={formData?.status}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Month Start"
-                                type="date"
-                                name="monthStart"
-                                required={true}
-                                value={formData?.monthStart}
-                                onChange={handleInputChange}
-                            />
-                        </div>
+            {/* Update Model */}
+            {showUpdate &&
+                <UpdatePipeline
+                    pipelineId={pipelineId}
+                    onClose={() => setShowUpdate(false)}
+                    runAfter={loadTable}
+                />
+            }
 
-                        <Textarea
-                            label="Remarks"
-                            name="remarks"
-                            placeholder="Additional notes or comments"
-                            value={formData?.remarks}
-                            onChange={handleInputChange}
-                        />
-
-                        <ModalFooter
-                            submitLabel='Add Entry'
-                            onClose={() => setShowAdd(false)}
-                            onSubmit={handleSubmit}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
-            {/* Edit Model */}
-            <ModalBackground show={showEdit}>
-                <Modal maxWidth={800}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Edit Pipeline Entry"
-                            subTitle="Update transaction details"
-                            onClose={() => setShowEdit(false)}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Closed"
-                                type="date"
-                                name="closed"
-                                required={true}
-                                value={formData?.closed}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Target Released Date"
-                                type="date"
-                                name="targetReleased"
-                                required={true}
-                                value={formData?.targetReleased}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Variant Unit"
-                                placeholder="Select Variant"
-                                name="variant"
-                                required={true}
-                                value={formData?.variant}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Model"
-                                placeholder="Select Model"
-                                name="model"
-                                required={true}
-                                value={formData?.model}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Color"
-                                placeholder="e.g. Pearl White"
-                                name="color"
-                                required={true}
-                                value={formData?.color}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="CS Number"
-                                placeholder="e.g. CS-2026-001"
-                                name="csNumber"
-                                required={true}
-                                value={formData?.csNumber}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Transaction"
-                                placeholder="Select Transaction"
-                                name="transaction"
-                                options={[
-                                    { value: 'Cash', name: 'Cash' },
-                                    { value: 'bank OP', name: 'bank OP' },
-                                    { value: 'Financing', name: 'Financing' }
-                                ]}
-                                required={true}
-                                value={formData?.transaction}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Bank"
-                                placeholder={formData?.transaction === 'Cash' ? "N/A for Cash" : "e.g. BDO, BPI"}
-                                name="bank"
-                                required={formData?.transaction !== 'Cash'}
-                                disabled={formData?.transaction === 'Cash'}
-                                value={formData?.bank}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Client"
-                                placeholder="Client name"
-                                name="client"
-                                required={true}
-                                value={formData?.client}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="GRM"
-                                placeholder="Select GRM"
-                                name="grm"
-                                required={true}
-                                value={formData?.grm}
-                                onChange={handleInputChange}
-                            />
-                            <Select
-                                label="Status"
-                                placeholder="Select Status"
-                                name="status"
-                                options={[
-                                    { value: "Sold", name: "Sold" },
-                                    { value: "For Release", name: "For Release" },
-                                    { value: "w/ Payment", name: "w/ Payment" },
-                                    { value: "For Bank Approval", name: "For Bank Approval" }
-                                ]}
-                                required={true}
-                                value={formData?.status}
-                                onChange={handleInputChange}
-                            />
-                            <Input
-                                label="Month Start"
-                                type="date"
-                                name="monthStart"
-                                required={true}
-                                value={formData?.monthStart}
-                                onChange={handleInputChange}
-                            />
-                        </div>
-
-                        <Textarea
-                            label="Remarks"
-                            name="remarks"
-                            placeholder="Additional notes or comments"
-                            value={formData?.remarks}
-                            onChange={handleInputChange}
-                        />
-
-                        <ModalFooter
-                            submitLabel='Save Changes'
-                            onClose={() => setShowEdit(false)}
-                            onSubmit={handleSubmit}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
+            {/* Delete Model */}
+            {showDelete &&
+                <DeletePipeline
+                    pipelineId={pipelineId}
+                    onClose={() => setShowDelete(false)}
+                    runAfter={loadTable}
+                />
+            }
         </div >
     )
 }

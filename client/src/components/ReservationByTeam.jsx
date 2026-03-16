@@ -8,29 +8,7 @@ import {
     ResponsiveContainer
 } from "recharts";
 
-
-const teams = [
-
-    {
-        id: 1,
-        name: 'NSR1 – Mike',
-        data: 35,
-    },
-    {
-        id: 2,
-        name: 'NSR2 – Jhoven',
-        data: 32,
-    },
-    {
-        id: 3,
-        name: 'NSR3 – Jayr',
-        data: 25,
-    },
-];
-
-
-
-export default function ReservationByTeam() {
+export default function ReservationByTeam({teams}) {
 
     return (
         <ResponsiveContainer width="100%" height="100%">

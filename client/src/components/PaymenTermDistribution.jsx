@@ -6,19 +6,13 @@ import {
     Cell
 } from "recharts";
 
-const paymentTerm = [
-    { name: 'Cash', data: 28 },
-    { name: 'Financing', data: 52 },
-    { name: 'Bank OP', data: 20 }
-];
-
 const COLORS = [
     "#3b82f6",
     "#10B981",
     "#F59E0B"
 ];
 
-export default function PaymentTermDistribution() {
+export default function PaymentTermDistribution({ paymentTerm }) {
 
     return (
         <ResponsiveContainer width="100%" height="100%">

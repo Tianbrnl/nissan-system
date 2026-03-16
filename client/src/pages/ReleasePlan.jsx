@@ -1,4 +1,4 @@
-import { FileDown } from "lucide-react";
+import { FileDown, Pen } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import Select from "../components/ui/Select";
@@ -54,6 +54,9 @@ export default function ReleasePlan() {
                         <Select
                             placeholder="Select a Month"
                         />
+                        <button className="btn bg-nissan-red text-white rounded-xl">
+                            <Pen size={16}/> Edit Commitment
+                        </button>
                         <button className="btn bg-nissan-red text-white rounded-xl">
                             <FileDown size={16} /> Export
                         </button>

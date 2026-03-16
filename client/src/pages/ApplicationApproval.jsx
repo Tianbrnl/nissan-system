@@ -1,26 +1,10 @@
-/* eslint-disable no-unused-vars */
-import { FileDown, Pencil } from "lucide-react";
+import { FileDown } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import ApprovalRate from "../components/ApprovalRate";
 import AvailmentRate from "../components/AvailmentRate";
-import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../components/ui/ui-modal";
-import { useState } from "react";
-import Input from "../components/ui/Input";
-import Select from "../components/ui/Select";
-import { useForm } from "../hooks/form";
 
 export default function ApplicationApproval() {
-
-    const [showEditModal, setShowEditModal] = useState(false);
-
-    const { formData, handleInputChange } = useForm({
-        teamId: null,
-        applications: 1,
-        appliedApproved: 0,
-        appliedNotApproved: 0,
-        availed: 0,
-    })
 
     const totals = {
         applications: 165,
@@ -87,11 +71,6 @@ export default function ApplicationApproval() {
         }
     }
 
-    const handleShowEdit = (teamId) => {
-        console.log(teamId);
-        setShowEditModal(true);
-    }
-
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -133,7 +112,7 @@ export default function ApplicationApproval() {
                 {/* Applications & Approvals - Overall Monthly Matrix */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Vehicle Sales by Model (Monthly)</p>
+                        <p className="text-lg font-semibold">Applications & Approvals - Overall Monthly Matrix</p>
                     </div>
 
                     <div className="table-style">
@@ -234,19 +213,7 @@ export default function ApplicationApproval() {
                             <tbody>
                                 {teamPerformance?.teams?.map((team, index) => (
                                     <tr key={index}>
-                                        <td className="rowHeader">
-                                            <div className="flex items-center justify-between gap-4">
-                                                {team?.name}
-                                                <button
-                                                    className="cursor-pointer"
-                                                    onClick={() => handleShowEdit(team?.id)}
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                            </div>
-
-                                        </td>
-
+                                        <td className="rowHeader">{team?.name}</td>
                                         <td className={team?.applications > 0 ? '' : 'text-nissan-gray'}>{team?.applications}</td>
                                         <td className={team?.appliedApproved > 0 ? '' : 'text-nissan-gray'}>{team?.appliedApproved}</td>
                                         <td className={team?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{team?.appliedNotApproved}</td>
@@ -289,57 +256,6 @@ export default function ApplicationApproval() {
                     </div>
                 </section>
             </div>
-
-            {/* Edit Model */}
-            <ModalBackground show={showEditModal}>
-                <Modal maxWidth={800}>
-                    <div className="flex flex-col gap-4">
-                        <ModalHeader
-                            title="Edit Applications Data"
-                            onClose={() => setShowEditModal(false)}
-                        />
-
-                        <Select
-                            label="Select Month"
-                            name="month"
-                            placeholder="Select a Month"
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                label="Availed"
-                                name="availed"
-                                type="number"
-                                value={formData?.applications}
-                            />
-                            <Input
-                                label="Applications"
-                                name="applications"
-                                type="number"
-                                value={formData?.appliedApproved}
-                            />
-                            <Input
-                                label="Approved (As Applied)"
-                                name="appliedApproved"
-                                type="number"
-                                value={formData?.appliedNotApproved}
-                            />
-                            <Input
-                                label="Approved (Not As Applied)"
-                                name="appliedNotApproved"
-                                type="number"
-                                value={formData?.availed}
-                            />
-                        </div>
-
-                        <ModalFooter
-                            submitLabel='Save'
-                            onClose={() => setShowEditModal(false)}
-                        />
-                    </div>
-                </Modal>
-            </ModalBackground>
-
         </div >
     )
 }

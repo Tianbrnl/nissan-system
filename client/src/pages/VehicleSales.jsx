@@ -1,73 +1,79 @@
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
-import Select from "../components/ui/Select";
 import TeamPerformance from "../components/TeamPerformance";
-import ModelDistribution from "../components/ModelDistribution";
-import ModelContributionPerTeam from "../components/ModelContributionPerTeam";
+import { useEffect } from "react";
+import { fetchTeamPerformance } from "../services/vehicleSales";
+import { useState } from "react";
+import UnitDistribution from "../components/UnitDistribution";
+import UnitContributionPerTeam from "../components/UnitContributionPerTeam";
+import Input from "../components/ui/Input";
 
 export default function VehicleSales() {
+    const today = new Date();
+    const thisYear = today.getFullYear();
+    const thisMonth = today.getMonth() + 1;
+    const formattedMonth = `${thisYear}-${thisMonth.toString().padStart(2, '0')}`;
 
-    const totals = {
-        totalUnitSold: {
-            total: 99
-        },
+    const [monthYear, setMonthYear] = useState(formattedMonth);
+
+    const [data, setData] = useState([]);
+    const [unitTotals, setUnitTotals] = useState([]);
+
+    const [graphTotalUnits, setGraphTotalUnits] = useState([]);
+    const [unitContributionPerTeam, setUnitContributionPerTeam] = useState([]);
+
+    const [totals, setTotals] = useState({
+        totalUnitSold: 0,
         topTeam: {
-            total: 'NSR1-Mike',
-            units: 37
+            team: '',
+            units: 0
         },
-        totalModel: {
-            total: 'Kicks',
-            units: 18
+        topUnit: {
+            unit: '',
+            total: 0
         },
-        bestSellingModelUnits: {
-            total: 18
-        }
-    };
+    });
 
-    const dates = [
-        { value: '', name: 'DEC 2025' },
-        { value: '', name: 'JAN 2026' },
-        { value: '', name: 'FEB 2026' },
-        { value: '', name: 'MAR 2026' },
-        { value: '', name: 'APR 2026' },
-        { value: '', name: 'MAY 2026' },
-        { value: '', name: 'JUN 2026' },
-        { value: '', name: 'JUL 2026' },
-        { value: '', name: 'AUG 2026' },
-        { value: '', name: 'SEP 2026' },
-        { value: '', name: 'OCT 2026' },
-        { value: '', name: 'NOV 2026' },
-        { value: '', name: 'DEC 2026' }
-    ];
+    useEffect(() => {
+        try {
+            const load = async () => {
+                const { success, message, teamPerformance, unitTotals } = await fetchTeamPerformance(monthYear);
+                if (success) {
+                    setData(teamPerformance);
+                    setUnitTotals(unitTotals);
 
-    const teamSales = {
-        models: [
-            'Kicks',
-            'E26',
-            'N18',
-            'Patrol',
-            'D23',
-            'Terra',
-            'Livina',
-            'Nissan Z',
-            'Prem',
-        ],
-        teams: [
-            {
-                name: 'NSR1 – Mike',
-                data: [7, 4, 5, 3, 6, 4, 3, 2, 3]
-            },
-            {
-                name: 'NSR2 – Jhoven',
-                data: [6, 5, 4, 2, 5, 3, 4, 3, 4]
-            },
-            {
-                name: 'NSR3 – Jayr',
-                data: [5, 3, 3, 3, 4, 4, 2, 2, 2]
+                    const formattedGraphTotalUnits = teamPerformance.map(tp => ({ team: tp.team, units: tp.total }));
+                    setGraphTotalUnits(formattedGraphTotalUnits);
+
+                    const formattedGraphContributionPerTeam = teamPerformance.map(tp => ({ team: tp.team, units: tp.counts.map(unit => ({ name: unit.name, data: unit.count })) }));
+                    setUnitContributionPerTeam(formattedGraphContributionPerTeam);
+
+                    const totalUnitSold = unitTotals?.reduce((sum, num) => sum + num.total, 0) ?? 0;
+
+                    const topTeam = formattedGraphTotalUnits.reduce((max, team) => {
+                        return team.units > max.units ? team : max;
+                    });
+
+                    let topUnit = unitTotals?.reduce((max, unit) => {
+                        return unit.total > max.total ? unit : max;
+                    });
+
+                    topUnit = { unit: topUnit.name, total: topUnit.total }
+
+                    setTotals({
+                        totalUnitSold,
+                        topTeam,
+                        topUnit,
+                    });
+                    return
+                };
+                console.error(message);
             }
-        ],
-        totals: [18, 12, 12, 8, 15, 11, 9, 7, 7]
-    }
+            load();
+        } catch (error) {
+            console.error(error);
+        }
+    }, [monthYear])
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -77,10 +83,15 @@ export default function VehicleSales() {
                 {/* header */}
                 <div className="flex justify-between items-center gap-4 flex-wrap">
                     <div>
-                        <PageTitle>FEB 2026 PERFORMANCE PER GROUP</PageTitle>
+                        <PageTitle>{monthYear} PERFORMANCE PER GROUP</PageTitle>
                         <PageSubTitle>Vehicle sales breackdown by team and model</PageSubTitle>
                     </div>
-                    <Select options={dates} />
+
+                    <Input
+                        type="month"
+                        value={monthYear}
+                        onChange={(e) => setMonthYear(e.target.value)}
+                    />
                 </div>
 
                 {/* totals */}
@@ -88,24 +99,19 @@ export default function VehicleSales() {
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm">Total Units Sold</p>
-                        <h2 className="font-bold">99</h2>
+                        <h2 className="font-bold">{totals?.totalUnitSold}</h2>
                     </div>
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm">Top Team</p>
-                        <h4 className="font-bold text-nissan-red">{totals?.topTeam?.total}</h4>
+                        <h4 className="font-bold text-nissan-red">{totals?.topTeam?.team}</h4>
                         <p className="text-gray-500 text-sm">{totals?.topTeam?.units} units</p>
                     </div>
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Model</p>
-                        <h4 className="font-bold text-green-600">{totals?.totalModel?.total}</h4>
-                        <p className="text-gray-500 text-sm">{totals?.totalModel?.units} units</p>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Best Selling Model Units</p>
-                        <h2 className="font-bold">{totals?.bestSellingModelUnits?.total}</h2>
+                        <p className="text-sm">Total Unit</p>
+                        <h4 className="font-bold text-green-600">{totals?.topUnit?.unit}</h4>
+                        <p className="text-gray-500 text-sm">{totals?.topUnit?.total} units</p>
                     </div>
                 </div>
 
@@ -116,31 +122,33 @@ export default function VehicleSales() {
                             <thead>
                                 <tr>
                                     <td className="rowHeader">TEAM</td>
-                                    {teamSales?.models?.map((model, index) => (
-                                        <td key={index}>{model}</td>
+                                    {data[0]?.counts?.map((count, index) => (
+                                        <td key={index}>{count?.name}</td>
                                     ))}
                                     <td className="rowFooter">TOTAL</td>
                                 </tr>
                             </thead>
                             <tbody>
-                                {teamSales?.teams?.map((team, index) => (
+                                {data?.map((team, index) => (
                                     <tr key={index}>
-                                        <td className="rowHeader">{team?.name}</td>
-                                        {team?.data?.map((d, index) => (
-                                            <td key={index}>{d}</td>
+                                        <td className="rowHeader">{team?.team}</td>
+                                        {team?.counts?.map((c, index) => (
+                                            <td key={index} className={`${c.count > 0 ? '' : 'text-nissan-gray'}`}>{c.count}</td>
                                         ))}
-                                        <td className="rowFooter">{team?.data?.reduce((sum, num) => sum + num, 0) ?? 0}</td>
+                                        <td className="rowFooter">
+                                            {team?.total}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td className="rowHeader">TOTAL</td>
-                                    {teamSales?.totals?.map((total, index) => (
-                                        <td key={index} className={total > 0 ? '' : 'text-nissan-gray'}>{total}</td>
+                                    {unitTotals?.map((unitTotal, index) => (
+                                        <td key={index}>{unitTotal.total}</td>
                                     ))}
-                                    <td className={`${(teamSales?.totals?.reduce((sum, num) => sum + num, 0) ?? 0) ? '' : 'text-nissan-gray'} rowFooter`}>
-                                        {teamSales?.totals?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                    <td className="rowFooter">
+                                        {unitTotals?.reduce((sum, num) => sum + num.total, 0) ?? 0}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -152,23 +160,23 @@ export default function VehicleSales() {
                     <div className="lg:flex-2 p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                         <p className="text-lg font-semibold">Team Performance - (Total Units)</p>
                         <div className="h-70">
-                            <TeamPerformance teams={teamSales?.teams} />
+                            <TeamPerformance teams={graphTotalUnits} />
                         </div>
                     </div>
                     <div className="lg:flex-1 p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
-                        <p className="text-lg font-semibold">Model Destribution</p>
+                        <p className="text-lg font-semibold">Unit Destribution</p>
 
                         <div className="h-70">
-                            <ModelDistribution />
+                            <UnitDistribution />
                         </div>
                     </div>
                 </section>
 
                 <section className="lg:flex-1 p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
-                    <p className="text-lg font-semibold">Model Contribution per Team</p>
+                    <p className="text-lg font-semibold">Unit Contribution per Team</p>
 
                     <div className="h-70">
-                        <ModelContributionPerTeam />
+                        <UnitContributionPerTeam teams={unitContributionPerTeam} />
                     </div>
                 </section>
             </div>
