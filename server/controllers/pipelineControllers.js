@@ -1,5 +1,5 @@
 import { createPipelineService, deletePipelineService, readAllPipelineService, readOnePipelineService, updatePipelineService } from "../services/pipelineServices.js";
-
+import { getVehicleSalesByUnitsMonthly, getPaymentTermMonthly, getReservationByTeamMonthly } from "../services/vehicleSalesServices.js";
 // CREATE PIPELINE 
 export const createPipelineController = async (req, res) => {
     try {
@@ -163,3 +163,34 @@ export const deletePipelineController = async (req, res) => {
         })
     }
 }
+// Vehicle Sales Report
+export const vehicleSalesReport = async (req, res) => {
+
+    const result = await getVehicleSalesByUnitsMonthly();
+
+    res.json(result);
+
+};
+// payment term monthly 
+export const paymentTermReport = async (req, res) => {
+  try {
+    const result = await getPaymentTermMonthly();
+    res.json(result);
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+export const reservationByTeamReport = async (req, res) => {
+    try {
+        const result = await getReservationByTeamMonthly();
+        res.json(result);
+    } catch (error){
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+};
