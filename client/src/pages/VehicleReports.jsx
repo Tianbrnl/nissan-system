@@ -1,138 +1,181 @@
 import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
-import { useState } from "react";
+import { useState, useEffect  } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CreateVariant from "../components/VehicleReports/CreateVariant";
 import UpdateUnit from "../components/VehicleReports/UpdateUnit";
 import UpdateVariant from "../components/VehicleReports/UpdateVariant";
+import {
+  fetchVehicleSalesReport,
+  fetchPaymentTermReport,
+  fetchReservationByTeamReport
+} from "../services/vehicleSales";
 
+const REPORT_MONTH_LABELS = [
+    'DEC 2025',
+    'JAN 2026',
+    'FEB 2026',
+    'MAR 2026',
+    'APR 2026',
+    'MAY 2026',
+    'JUN 2026',
+    'JUL 2026',
+    'AUG 2026',
+    'SEP 2026',
+    'OCT 2026',
+    'NOV 2026',
+    'DEC 2026'
+];
+
+const getMonthIndex = (value) => {
+    if (!value) return -1;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return -1;
+
+    const label = date
+        .toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+        .toUpperCase();
+
+    return REPORT_MONTH_LABELS.indexOf(label);
+};
+
+const toNumber = (value) => Number(value) || 0;
+
+const transformVehicleSales = (data) => {
+    const months = REPORT_MONTH_LABELS.length;
+    const map = {};
+    const totals = Array(months).fill(0);
+
+    data.forEach(item => {
+        const unitId = item.unitId ?? item.unit?.id ?? item.Unit?.id ?? item.id;
+        const unit = item.unitName || item.unit?.name || item.Unit?.name || item.unit ;
+        const monthIndex = getMonthIndex(item.targetReleaseDate);
+        const total = toNumber(item.total ?? 1);
+
+        if (monthIndex === -1) return;
+
+        if (!map[unitId]) {
+            map[unitId] = {
+                id: unitId,
+                name: unit,
+                data: Array(months).fill(0)
+            };
+        }
+
+        map[unitId].data[monthIndex] += total;
+        totals[monthIndex] += total;
+    });
+
+    return {
+        vehicles: Object.values(map),
+        totals
+    };
+};
+
+const transformPaymentTerm = (data) => {
+    const months = REPORT_MONTH_LABELS.length;
+
+    const result = {
+        payment: [
+            { name: "Cash", data: Array(months).fill(0) },
+            { name: "Financing", data: Array(months).fill(0) },
+            { name: "Bank OP", data: Array(months).fill(0) }
+        ],
+        totals: Array(months).fill(0)
+    };
+
+    data.forEach(item => {
+        const monthIndex = getMonthIndex(item.targetReleaseDate);
+        const total = toNumber(item.total);
+
+        if (monthIndex === -1) return;
+
+        const row = result.payment.find(p => p.name === item.transaction);
+        if (row) {
+            row.data[monthIndex] += total;
+            result.totals[monthIndex] += total;
+        }
+    });
+
+    return result;
+};
+
+const transformReservation = (data) => {
+    const months = REPORT_MONTH_LABELS.length;
+    const map = {};
+    const totals = Array(months).fill(0);
+
+    data.forEach(item => {
+        const teamInfo = item.team || item.Team;
+        const teamId = item.teamId ?? teamInfo?.id;
+        const team = 
+            teamInfo?.teamLeader ||   
+            teamInfo?.teamName ||
+            teamInfo?.name ||
+            item.teamName ||
+            teamInfo?.teamCode ||     
+            item.teamCode ||
+            "Unknown";
+        const monthIndex = getMonthIndex(item.reservedAt);
+        const total = toNumber(item.total);
+
+        if (monthIndex === -1) return;
+
+        if (!map[teamId ?? team]) {
+            map[teamId ?? team] = {
+                id: teamId ?? team,
+                name: team,
+                data: Array(months).fill(0)
+            };
+        }
+
+        map[teamId ?? team].data[monthIndex] += total;
+        totals[monthIndex] += total;
+    });
+
+    return {
+        teams: Object.values(map),
+        totals
+    };
+};
+ 
 export default function VehicleReports() {
-
     const [showCreateVariant, setShowCreateVariant] = useState(false);
     const [showUpdateVariant, setShowUpdateVariant] = useState(false);
     const [showUpdateUnit, setShowUpdateUnit] = useState(false);
 
     const [unitId, setUnitId] = useState(null);
+// 1. state
+    const [vehicleSales, setVehicleSales] = useState({ vehicles: [], totals: [] });
+    const [paymentTerm, setPaymentTerm] = useState({ payment: [], totals: [] });
+    const [reservationByTeam, setReservationByTeam] = useState({ teams: [], totals: [] });
 
-    const dates = [
-        { value: '', name: 'DEC 2025' },
-        { value: '', name: 'JAN 2026' },
-        { value: '', name: 'FEB 2026' },
-        { value: '', name: 'MAR 2026' },
-        { value: '', name: 'APR 2026' },
-        { value: '', name: 'MAY 2026' },
-        { value: '', name: 'JUN 2026' },
-        { value: '', name: 'JUL 2026' },
-        { value: '', name: 'AUG 2026' },
-        { value: '', name: 'SEP 2026' },
-        { value: '', name: 'OCT 2026' },
-        { value: '', name: 'NOV 2026' },
-        { value: '', name: 'DEC 2026' }
-    ];
-    const vehicleSales = {
-        vehicles: [
-
-            {
-                id: 2,
-                name: 'Kicks',
-                data: [12, 15, 18, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 3,
-                name: 'E26',
-                data: [6, 9, 12, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 4,
-                name: 'N18',
-                data: [6, 9, 12, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 5,
-                name: 'Patrol',
-                data: [2, 5, 8, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 6,
-                name: 'D23',
-                data: [9, 12, 15, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 7,
-                name: 'Terra',
-                data: [5, 8, 11, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 8,
-                name: 'Livina',
-                data: [3, 6, 9, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 9,
-                name: 'Nissan Z',
-                data: [1, 4, 7, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 10,
-                name: 'Prem',
-                data: [1, 4, 7, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            }
-        ],
-        totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    }
-
-    const paymentTerm = {
-        payment: [
-
-            {
-                name: 'Cash',
-                data: [15, 18, 22, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                name: 'Financing',
-                data: [30, 35, 42, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                name: 'Bank PO',
-                data: [10, 12, 15, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-        ],
-        totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    }
-
-
-    const reservationByTeam = {
-        teams: [
-
-            {
-                id: 1,
-                name: 'NSR1 – Mike',
-                rate: 14,
-                data: [35, 38, 42, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 2,
-                name: 'NSR2 – Jhoven',
-                rate: 13,
-                data: [32, 35, 38, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-            {
-                id: 3,
-                name: 'NSR3 – Jayr',
-                rate: 16,
-                data: [25, 28, 32, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            },
-        ],
-        totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    }
-
+    const dates = REPORT_MONTH_LABELS.map(name => ({ value: '', name }));
     const handleEditModel = (modelId) => {
         setUnitId(modelId);
         setShowUpdateUnit(true);
     }
 
+// 2. useEffect
+    useEffect(() => {
+        const loadReports = async () => {
+        const v = await fetchVehicleSalesReport();
+        const p = await fetchPaymentTermReport();
+        const r = await fetchReservationByTeamReport();
 
+        console.log("Vehicle:", v);
+        console.log("Payment:", p);
+       console.log("Reservation:", r);
+
+        if (v?.success) setVehicleSales(transformVehicleSales(v.data));
+        if (p.success) setPaymentTerm(transformPaymentTerm(p.data));
+        if (r.success) setReservationByTeam(transformReservation(r.data));
+    };
+
+    loadReports();
+    }, []);
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -183,7 +226,7 @@ export default function VehicleReports() {
                             </thead>
                             <tbody>
                                 {vehicleSales?.vehicles?.map(vehicleSale => (
-                                    <tr key={vehicleSale?.id}>
+                                    <tr key={vehicleSale?.name}>
                                         <td className="rowHeader flex gap-4 items-center justify-between">
                                             {vehicleSale?.name}
                                             <DropdownMenu.Root>
@@ -262,8 +305,8 @@ export default function VehicleReports() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {paymentTerm?.payment?.map((p, index) => (
-                                    <tr key={index}>
+                                {paymentTerm?.payment?.map((p) => (
+                                    <tr key={p.name}>
                                         <td className="rowHeader">{p?.name}</td>
                                         {p?.data?.map((d, index) => (
                                             <td key={index} className={d > 0 ? '' : 'text-nissan-gray'}>{d}</td>
@@ -309,7 +352,7 @@ export default function VehicleReports() {
                             </thead>
                             <tbody>
                                 {reservationByTeam?.teams?.map(team => (
-                                    <tr key={team?.id}>
+                                    <tr key={team.id}>
                                         <td className="rowHeader">{team?.name}</td>
                                         {team?.data?.map((d, index) => (
                                             <td key={index} className={d > 0 ? '' : 'text-nissan-gray'}>{d}</td>

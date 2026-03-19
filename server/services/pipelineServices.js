@@ -1,7 +1,7 @@
 
 import {Pipelines, Teams, Units, Variants} from "../models/index.js";
 import { capitalizeEachWord, removeUnnecessarySpaces } from "../utils/format.js";
-
+import { Op } from "sequelize";
 // CREATE PIPELINE
 export const createPipelineService = async (
     targetReleased,
@@ -23,13 +23,16 @@ export const createPipelineService = async (
     reservedAt
 ) => {
     try {
+        const normalizedTargetReleased = targetReleased?.trim() || monthStart?.trim() || null;
+        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased;
+
         if (
             !unit.trim() ||
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||
             !grm.trim() ||
-            !monthStart.trim()
+            !normalizedMonthStart
         ) {
             return {
                 success: false,
@@ -43,7 +46,7 @@ export const createPipelineService = async (
 
         // Create pipeline
         await Pipelines.create({
-            targetReleased,
+            targetReleased: normalizedTargetReleased,
             unitId: unit,
             color,
             csNumber,
@@ -52,7 +55,7 @@ export const createPipelineService = async (
             client,
             teamId: grm,
             status,
-            monthStart,
+            monthStart: normalizedMonthStart,
             remarks,
             appliedAt,
             approvedAppliedAt,
@@ -207,8 +210,11 @@ export const updatePipelineService = async (
     reservedAt
 ) => {
     try {
+        const normalizedTargetReleased = targetReleased?.trim() || monthStart?.trim() || null;
+        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased;
+
         if (
-            !targetReleased.trim() ||
+            !normalizedTargetReleased ||
             !unit ||
             !color.trim() ||
             !csNumber.trim() ||
@@ -216,7 +222,7 @@ export const updatePipelineService = async (
             !client.trim() ||
             !grm ||
             !status.trim() ||
-            !monthStart.trim()
+            !normalizedMonthStart
         ) {
             return {
                 success: false,
@@ -226,7 +232,7 @@ export const updatePipelineService = async (
 
         // Create pipeline
         await Pipelines.update({
-            targetReleased,
+            targetReleased: normalizedTargetReleased,
             unitId: unit,
             color,
             csNumber,
@@ -235,7 +241,7 @@ export const updatePipelineService = async (
             client,
             teamId: grm,
             status,
-            monthStart,
+            monthStart: normalizedMonthStart,
             remarks,
             appliedAt,
             approvedAppliedAt,
@@ -284,3 +290,33 @@ export const deletePipelineService = async (pipelineId) => {
         };
     }
 }
+/// vehicle sales 
+export const getVehicleSalesByUnitsMonthly = async () => {
+    try {
+
+        const data = await Pipelines.findAll({
+            attributes: [
+                [sequelize.col("targetReleased"), "targetReleaseDate"],
+                [sequelize.fn("COUNT", sequelize.col("id")), "totalUnits"]
+            ],
+            where: {
+                targetReleased: {
+                    [Op.not]: null
+                }
+            },
+            group: ["targetReleased"],
+            order: [["targetReleased", "ASC"]]
+        });
+
+        return {
+            success: true,
+            data
+        };
+
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+};

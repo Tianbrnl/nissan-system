@@ -1,5 +1,84 @@
 import { Pipelines, Teams, Units } from "../models/index.js";
+//import { getVehicleSalesByUnitsMonthly } from "../services/vehicleSalesServices.js";
+import { Op, Sequelize } from "sequelize";
 
+const reportDateExpression = Sequelize.fn(
+  "COALESCE",
+  Sequelize.col("pipeline.targetReleased"),
+  Sequelize.col("pipeline.monthStart")
+);
+
+const reservationDateExpression = Sequelize.col("pipeline.reservedAt");
+
+// vehicleSales report
+export const getVehicleSalesByUnitsMonthly = async () => {
+  const result = await Pipelines.findAll({
+    attributes: [
+      "unitId",
+      [reportDateExpression, "targetReleaseDate"],
+      [Sequelize.fn("COUNT", Sequelize.col("pipeline.unitId")), "total"]
+    ],
+    include: [
+      {
+        model: Units,
+        attributes: ["id", "name"]
+      }
+    ],
+    group: ["unitId", reportDateExpression, "unit.id", "unit.name"],
+    order: [[reportDateExpression, "ASC"]]
+  });
+
+  return {
+    success: true,
+    data: result
+  };
+};
+// payment term monthly
+export const getPaymentTermMonthly = async () => {
+  const result = await Pipelines.findAll({
+    attributes: [
+      "transaction",
+      [reportDateExpression, "targetReleaseDate"],
+      [Sequelize.fn("COUNT", Sequelize.col("transaction")), "total"]
+    ],
+    group: ["transaction", reportDateExpression],
+    order: [[reportDateExpression, "ASC"]]
+  });
+
+  return {
+    success: true,
+    data: result
+  };
+};
+// reservation per month
+export const getReservationByTeamMonthly = async () => {
+  const result = await Pipelines.findAll({
+    attributes: [
+      "teamId",
+      [reservationDateExpression, "reservedDate"],
+      [Sequelize.fn("COUNT", Sequelize.col("teamId")), "total"]
+    ],
+    include: [
+      {
+        model: Teams,
+        attributes: ["teamCode", "teamLeader"]
+      }
+    ],
+    where: {
+      reservedAt: {
+        [Op.not]: null,
+        [Op.ne]: "0000-00-00"
+      }
+    },
+    group: ["teamId", reservationDateExpression, "team.id", "team.teamCode", "team.teamLeader"],
+    order: [[reservationDateExpression, "ASC"]]
+  });
+
+  return {
+    success: true,
+    data: result
+  };
+};
 // READ ALL TEAM PERFORMANCE
 export const readAllTeamPerformanceService = async (monthYear) => {
     try {

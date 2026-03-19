@@ -40,11 +40,24 @@ export default function CreatePipeline({ onClose = () => { }, runAfter = () => {
         reservedAt: ''
     });
 
+    useEffect(() => {
+        if (!formData.targetReleased) return;
+
+        setFormData(prev => {
+            if (prev.monthStart) return prev;
+
+            return {
+                ...prev,
+                monthStart: prev.targetReleased
+            };
+        });
+    }, [formData.targetReleased]);
+
     const handleSubmit = async () => {
         try {
             const { success, message } = await createPipeline(formData);
             if (success) {
-                runAfter();
+                await Promise.resolve(runAfter());
                 onClose();
                 return toast.success(message);
             }
@@ -104,6 +117,7 @@ export default function CreatePipeline({ onClose = () => { }, runAfter = () => {
                             label="Target Released Date"
                             type="date"
                             name="targetReleased"
+                            required={true}
                             value={formData?.targetReleased}
                             onChange={handleInputChange}
                         />
