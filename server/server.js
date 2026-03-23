@@ -9,6 +9,8 @@ import pipelineRouter from './routes/pipelineRoutes.js';
 import variantRouter from './routes/variantRoutes.js';
 import vehicleSalesRouter from './routes/vehicleSalesRoutes.js';
 import dashboardRouter from './routes/dashboardRoutes.js';
+import releaseRouter from "./routes/releaseRoutes.js";
+
 
 dotenv.config();
 
@@ -32,6 +34,7 @@ app.use('/api/pipeline', pipelineRouter);
 app.use('/api/variant', variantRouter);
 app.use('/api/vehicleSales', vehicleSalesRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use("/api/release", releaseRouter);
 
 // START SERVER
 const startServer = async () => {
