@@ -6,52 +6,54 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CreateVariant from "../components/VehicleReports/CreateVariant";
 import UpdateUnit from "../components/VehicleReports/UpdateUnit";
 import UpdateVariant from "../components/VehicleReports/UpdateVariant";
+import { exportToWord } from "../utils/ExportToWord";
 import {
   fetchVehicleSalesReport,
   fetchPaymentTermReport,
   fetchReservationByTeamReport
 } from "../services/vehicleSales";
 
-const REPORT_MONTH_LABELS = [
-    'DEC 2025',
-    'JAN 2026',
-    'FEB 2026',
-    'MAR 2026',
-    'APR 2026',
-    'MAY 2026',
-    'JUN 2026',
-    'JUL 2026',
-    'AUG 2026',
-    'SEP 2026',
-    'OCT 2026',
-    'NOV 2026',
-    'DEC 2026'
-];
+const generateYearMonths = (year) => {
+    return [
+        `JAN `,
+        `FEB `,
+        `MAR `,
+        `APR `,
+        `MAY `,
+        `JUN `,
+        `JUL `,
+        `AUG `,
+        `SEP `,
+        `OCT `,
+        `NOV `,
+        `DEC `
+    ];
+};
 
-const getMonthIndex = (value) => {
+const getMonthIndex = (value, year) => {
     if (!value) return -1;
 
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return -1;
 
-    const label = date
-        .toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
-        .toUpperCase();
+    // Filter out dates not in the selected year
+    if (date.getFullYear() !== year) return -1;
 
-    return REPORT_MONTH_LABELS.indexOf(label);
+    // Return 0-based month index (0 = January, 11 = December)
+    return date.getMonth();
 };
 
 const toNumber = (value) => Number(value) || 0;
 
-const transformVehicleSales = (data) => {
-    const months = REPORT_MONTH_LABELS.length;
+const transformVehicleSales = (data, year) => {
+    const months = 12;
     const map = {};
     const totals = Array(months).fill(0);
 
     data.forEach(item => {
         const unitId = item.unitId ?? item.unit?.id ?? item.Unit?.id ?? item.id;
         const unit = item.unitName || item.unit?.name || item.Unit?.name || item.unit ;
-        const monthIndex = getMonthIndex(item.targetReleaseDate);
+        const monthIndex = getMonthIndex(item.targetReleaseDate, year);
         const total = toNumber(item.total ?? 1);
 
         if (monthIndex === -1) return;
@@ -74,8 +76,8 @@ const transformVehicleSales = (data) => {
     };
 };
 
-const transformPaymentTerm = (data) => {
-    const months = REPORT_MONTH_LABELS.length;
+const transformPaymentTerm = (data, year) => {
+    const months = 12;
 
     const result = {
         payment: [
@@ -87,7 +89,7 @@ const transformPaymentTerm = (data) => {
     };
 
     data.forEach(item => {
-        const monthIndex = getMonthIndex(item.targetReleaseDate);
+        const monthIndex = getMonthIndex(item.targetReleaseDate, year);
         const total = toNumber(item.total);
 
         if (monthIndex === -1) return;
@@ -102,8 +104,8 @@ const transformPaymentTerm = (data) => {
     return result;
 };
 
-const transformReservation = (data) => {
-    const months = REPORT_MONTH_LABELS.length;
+const transformReservation = (data, year) => {
+    const months = 12;
     const map = {};
     const totals = Array(months).fill(0);
 
@@ -118,7 +120,7 @@ const transformReservation = (data) => {
             teamInfo?.teamCode ||     
             item.teamCode ||
             "Unknown";
-        const monthIndex = getMonthIndex(item.reservedAt);
+        const monthIndex = getMonthIndex(item.reservedDate, year);
         const total = toNumber(item.total);
 
         if (monthIndex === -1) return;
@@ -142,58 +144,198 @@ const transformReservation = (data) => {
 };
  
 export default function VehicleReports() {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const [year, setYear] = useState(currentYear);
+
     const [showCreateVariant, setShowCreateVariant] = useState(false);
     const [showUpdateVariant, setShowUpdateVariant] = useState(false);
     const [showUpdateUnit, setShowUpdateUnit] = useState(false);
+    const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
     const [unitId, setUnitId] = useState(null);
-// 1. state
     const [vehicleSales, setVehicleSales] = useState({ vehicles: [], totals: [] });
     const [paymentTerm, setPaymentTerm] = useState({ payment: [], totals: [] });
     const [reservationByTeam, setReservationByTeam] = useState({ teams: [], totals: [] });
 
-    const dates = REPORT_MONTH_LABELS.map(name => ({ value: '', name }));
+    const dates = generateYearMonths(year).map(name => ({ value: '', name }));
+
+    // Generate year range from 2025 to 2100
+    const getYearRange = () => {
+        return Array.from({ length: 76 }, (_, i) => 2025 + i);
+    };
+
     const handleEditModel = (modelId) => {
         setUnitId(modelId);
         setShowUpdateUnit(true);
     }
 
-// 2. useEffect
-    useEffect(() => {
-        const loadReports = async () => {
-        const v = await fetchVehicleSalesReport();
-        const p = await fetchPaymentTermReport();
-        const r = await fetchReservationByTeamReport();
+    const months = generateYearMonths(year);
 
-        console.log("Vehicle:", v);
-        console.log("Payment:", p);
-       console.log("Reservation:", r);
+    const handleExportVehicleSales = async () => {
+        const headers = ["UNITS", ...months, "TOTAL"];
+        const rows = vehicleSales.vehicles.map(vehicle => [
+            vehicle.name,
+            ...vehicle.data,
+            vehicle.data.reduce((sum, value) => sum + value, 0)
+        ]);
+        rows.push([
+            "TOTAL",
+            ...vehicleSales.totals,
+            vehicleSales.totals.reduce((sum, value) => sum + value, 0)
+        ]);
 
-        if (v?.success) setVehicleSales(transformVehicleSales(v.data));
-        if (p.success) setPaymentTerm(transformPaymentTerm(p.data));
-        if (r.success) setReservationByTeam(transformReservation(r.data));
+        await exportToWord({
+            title: `${year} Vehicle Sales by Units`,
+            subtitle: "Monthly breakdown by model",
+            headers,
+            rows,
+            fileName: `Vehicle_Sales_${year}`
+        });
     };
 
-    loadReports();
-    }, []);
+    const handleExportPaymentTerms = async () => {
+        const headers = ["PAYMENT TERM", ...months, "TOTAL"];
+        const rows = paymentTerm.payment.map(payment => [
+            payment.name,
+            ...payment.data,
+            payment.data.reduce((sum, value) => sum + value, 0)
+        ]);
+        rows.push([
+            "TOTAL",
+            ...paymentTerm.totals,
+            paymentTerm.totals.reduce((sum, value) => sum + value, 0)
+        ]);
+
+        await exportToWord({
+            title: `${year} Payment Terms Report`,
+            subtitle: "Monthly breakdown of payment methods",
+            headers,
+            rows,
+            fileName: `Payment_Terms_${year}`
+        });
+    };
+
+    const handleExportReservations = async () => {
+        const headers = ["TEAM", ...months, "TOTAL"];
+        const rows = reservationByTeam.teams.map(team => [
+            team.name,
+            ...team.data,
+            team.data.reduce((sum, value) => sum + value, 0)
+        ]);
+        rows.push([
+            "TOTAL",
+            ...reservationByTeam.totals,
+            reservationByTeam.totals.reduce((sum, value) => sum + value, 0)
+        ]);
+
+        await exportToWord({
+            title: `${year} Reservations by Team`,
+            subtitle: "Monthly reservations breakdown by team",
+            headers,
+            rows,
+            fileName: `Reservations_By_Team_${year}`
+        });
+    };
+
+    const handleExportAll = async () => {
+        // This is for the main export button - exports all three reports
+        const headers = ["UNITS", ...months, "TOTAL"];
+        const rows = vehicleSales.vehicles.map(vehicle => [
+            vehicle.name,
+            ...vehicle.data,
+            vehicle.data.reduce((sum, value) => sum + value, 0)
+        ]);
+        rows.push([
+            "TOTAL",
+            ...vehicleSales.totals,
+            vehicleSales.totals.reduce((sum, value) => sum + value, 0)
+        ]);
+
+        await exportToWord({
+            title: `${year} Vehicle & Reservation Reports`,
+            subtitle: "Complete monthly breakdown",
+            headers,
+            rows,
+            fileName: `Vehicle_Reports_${year}`
+        });
+    };
+
+    useEffect(() => {
+        const loadReports = async () => {
+            const v = await fetchVehicleSalesReport();
+            const p = await fetchPaymentTermReport();
+            const r = await fetchReservationByTeamReport();
+
+            console.log("Vehicle:", v);
+            console.log("Payment:", p);
+            console.log("Reservation:", r);
+
+            if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
+            if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
+            if (r?.success) setReservationByTeam(transformReservation(r.data, year));
+        };
+
+        loadReports();
+    }, [year]);
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
             <div className="grow p-8 space-y-8 overflow-auto">
                 <div className="flex justify-between items-center gap-4 flex-wrap">
                     <div>
-                        <PageTitle>Vehicle & Reservation Reports</PageTitle>
+                        <PageTitle>{year} VEHICLE & RESERVATION REPORTS</PageTitle>
                         <PageSubTitle>Monthly breakdown by model, payment terms, and team reservations</PageSubTitle>
                     </div>
-                    <button className="btn bg-nissan-red text-white rounded-xl">
-                        <FileDown size={16} /> Export
-                    </button>
+                    <div className="flex gap-7 items-center">
+                        <DropdownMenu.Root open={yearDropdownOpen} onOpenChange={setYearDropdownOpen}>
+                            <DropdownMenu.Trigger asChild>
+                                <button className="w-24 text-center px-5 py-2 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-nissan-red bg-white hover:bg-gray-50 font-medium transition-colors">
+                                    {year}
+                                </button>
+                            </DropdownMenu.Trigger>
+
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                    align="center"
+                                    sideOffset={5}
+                                    className="bg-white border border-gray-300 rounded-xl shadow-lg p-4"
+                                    style={{ width: '320px' }}
+                                >
+                                    <div className="max-h-64 overflow-y-auto">
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {getYearRange().map((y) => (
+                                                <button
+                                                    key={y}
+                                                    onClick={() => {
+                                                        setYear(y);
+                                                        setYearDropdownOpen(false);
+                                                    }}
+                                                    className={`px-2 py-2 text-sm rounded-lg font-medium transition-all cursor-pointer border-2 ${
+                                                        y === year
+                                                            ? 'bg-nissan-red text-white border-nissan-red font-bold'
+                                                            : 'bg-white text-gray-700 border-gray-200 hover:border-nissan-red hover:text-nissan-red'
+                                                    }`}
+                                                >
+                                                    {y}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportAll}>
+                            <FileDown size={16} /> Export
+                        </button>
+                    </div>
                 </div>
 
                 {/* Vehicle Sales by Model (Monthly) */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Vehicle Sales by Units (Monthly)</p>
+                        <p className="text-lg font-semibold">Vehicle Sales by Units (Monthly) - {year}</p>
                         <div className="flex gap-2">
                             <button
                                 className="btn rounded-xl"
@@ -207,7 +349,7 @@ export default function VehicleReports() {
                             >
                                 <Pen size={16} />
                             </button>
-                            <button className="btn bg-nissan-red text-white rounded-xl">
+                            <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportVehicleSales}>
                                 <FileDown size={16} /> Export
                             </button>
                         </div>
@@ -285,10 +427,10 @@ export default function VehicleReports() {
                 {/* Payment Term (Monthly) */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Payment Term (Monthly)</p>
+                        <p className="text-lg font-semibold">Payment Term (Monthly) - {year}</p>
 
 
-                        <button className="btn bg-nissan-red text-white rounded-xl">
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportPaymentTerms}>
                             <FileDown size={16} /> Export
                         </button>
 
@@ -332,9 +474,9 @@ export default function VehicleReports() {
                 {/* Reservation by Team (Monthly) */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Reservation by Team (Monthly)</p>
+                        <p className="text-lg font-semibold">Reservation by Team (Monthly) - {year}</p>
 
-                        <button className="btn bg-nissan-red text-white rounded-xl">
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportReservations}>
                             <FileDown size={16} /> Export
                         </button>
                     </div>
