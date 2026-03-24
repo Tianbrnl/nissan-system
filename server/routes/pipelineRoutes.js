@@ -6,6 +6,9 @@ const pipelineRouter = express.Router();
 // CREATE PIPELINE
 pipelineRouter.post('/create', createPipelineController);
 
+// READ PIPELINE LIST
+pipelineRouter.get('/', readAllPipelineController);
+
 // READ ONE PIPELINE
 pipelineRouter.get('/readOne/:pipelineId', readOnePipelineController);
 

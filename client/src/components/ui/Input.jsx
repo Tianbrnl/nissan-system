@@ -6,7 +6,9 @@ export default function Input({
     name,
     value = '',
     placeholder,
-    onChange = () => { } }
+    onChange = () => { },
+    onKeyDown = () => { }
+}
 ) {
     return (
         <div>
@@ -19,6 +21,7 @@ export default function Input({
                 disabled={disabled}
                 className={`${type === 'file' ? 'file-input' : 'input'} w-full`}
                 onChange={onChange}
+                onKeyDown={onKeyDown}
             />
         </div>
     );

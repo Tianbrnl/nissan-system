@@ -31,9 +31,27 @@ export const readOnePipeline = async (pipelineId) => {
 };
 
 // READ ALL PIPELINE
-export const readAllPipeline = async () => {
+export const readAllPipeline = async ({
+    page = 1,
+    limit = 10,
+    month,
+    search = '',
+    status = '',
+    grm = '',
+    model = ''
+} = {}) => {
     try {
-        const response = await axios.get(`${API_URL}/api/pipeline/readAll`);
+        const response = await axios.get(`${API_URL}/api/pipeline`, {
+            params: {
+                page,
+                limit,
+                ...(month ? { month } : {}),
+                ...(search ? { search } : {}),
+                ...(status ? { status } : {}),
+                ...(grm ? { grm } : {}),
+                ...(model ? { model } : {})
+            }
+        });
         return response.data;
     } catch (error) {
         console.error(error);

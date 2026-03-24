@@ -1,120 +1,183 @@
-import { FileDown, Pen } from "lucide-react";
+import { FileDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
-import Select from "../components/ui/Select";
-import { useState } from "react";
+import { fetchReleasePlan, updateReleasePlan } from "../services/releaseServices";
 import { exportToWord } from "../utils/ExportToWord";
 
-export default function ReleasePlan() {
-    const [releasePlan, setReleasePlan] = useState({
-        groups: [
-            {
-                id: 1,
-                team: 'NSR1 – Mike',
-                actual: 48,
-                additionalThisWeek: 30,
-                additionalNextWeek: 7,
-                monthEndCommitment: 47,
-            },
-            {
-                id: 2,
-                team: 'NSR2 – Jhoven',
-                actual: 25,
-                additionalThisWeek: 6,
-                additionalNextWeek: 8,
-                monthEndCommitment: 39,
-            },
-            {
-                id: 3,
-                team: 'NSR3 – Jay-R',
-                actual: 22,
-                additionalThisWeek: 5,
-                additionalNextWeek: 7,
-                monthEndCommitment: 34,
-            },
-        ],
-        totals: {
-            actual: 77,
-            additionalThisWeek: 18,
-            additionalNextWeek: 25,
-            monthEndCommitment: 125,
-        }
-    });
-    
-    const [isEditing, setIsEditing] = useState(false);
-    const [editedValues, setEditedValues] = useState({});
-    const [selectedDate, setSelectedDate] = useState('2026-03-23');
+const getTodayString = () => new Date().toISOString().split("T")[0];
+const getTodayMonthString = () => getTodayString().slice(0, 7);
+const monthValueToDate = (monthValue) => `${monthValue}-01`;
+const TEAM_LABELS = {
+    NSR1: "NSR1 - MIKE",
+    NSR2: "NSR2 - JHOVEN",
+    NSR3: "NSR3 - JAYR",
+};
 
-    const handleDateChange = (e) => {
-        setSelectedDate(e.target.value);
+const getTeamDisplayName = (team) => TEAM_LABELS[team] || team;
+
+const calculateTotals = (groups) => {
+    const totals = groups.reduce((acc, group) => {
+        acc.actual += Number(group.actual) || 0;
+        acc.additionalThisWeek += Number(group.additionalThisWeek) || 0;
+        acc.additionalNextWeek += Number(group.additionalNextWeek) || 0;
+        acc.monthEndCommitment += Number(group.monthEndCommitment) || 0;
+        return acc;
+    }, {
+        actual: 0,
+        additionalThisWeek: 0,
+        additionalNextWeek: 0,
+        monthEndCommitment: 0,
+    });
+
+    return {
+        ...totals,
+        variance: Math.abs(totals.actual - totals.monthEndCommitment),
+    };
+};
+
+const mapApiGroups = (apiGroups = []) => {
+    return apiGroups.map((group, index) => ({
+        id: `${group.team}-${index}`,
+        team: group.team,
+        actual: Number(group.actual) || 0,
+        additionalThisWeek: Number(group.thisWeek) || 0,
+        additionalNextWeek: Number(group.nextWeek) || 0,
+        monthEndCommitment: Number(group.monthEnd) || 0,
+    }));
+};
+
+export default function ReleasePlan() {
+    const [selectedDate, setSelectedDate] = useState(getTodayString());
+    const [editMonth, setEditMonth] = useState(getTodayMonthString());
+    const [groups, setGroups] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const loadReleasePlan = async () => {
+            setIsLoading(true);
+
+            const [viewResponse, editResponse] = await Promise.all([
+                fetchReleasePlan(selectedDate),
+                fetchReleasePlan(monthValueToDate(editMonth))
+            ]);
+
+            if (!viewResponse.success) {
+                console.error(viewResponse.message);
+                toast.error(viewResponse.message);
+                setGroups([]);
+                setIsLoading(false);
+                return;
+            }
+
+            if (!editResponse.success) {
+                console.error(editResponse.message);
+                toast.error(editResponse.message);
+                setGroups([]);
+                setIsLoading(false);
+                return;
+            }
+
+            const viewGroups = mapApiGroups(viewResponse.data);
+            const editGroups = mapApiGroups(editResponse.data);
+            const editMonthEndByTeam = new Map(
+                editGroups.map((group) => [group.team, group.monthEndCommitment])
+            );
+
+            setGroups(viewGroups.map((group) => ({
+                ...group,
+                monthEndCommitment: editMonthEndByTeam.get(group.team) ?? 0
+            })));
+            setIsLoading(false);
+        };
+
+        loadReleasePlan();
+    }, [selectedDate, editMonth]);
+
+    const handleDateChange = (event) => {
+        setSelectedDate(event.target.value);
     };
 
-    // Calculate totals whenever releasePlan changes
-    const calculateTotals = (groups) => {
-        return {
-            actual: groups.reduce((sum, g) => sum + g.actual, 0),
-            additionalThisWeek: groups.reduce((sum, g) => sum + g.additionalThisWeek, 0),
-            additionalNextWeek: groups.reduce((sum, g) => sum + g.additionalNextWeek, 0),
-            monthEndCommitment: groups.reduce((sum, g) => sum + (editedValues[g.id] || g.monthEndCommitment), 0),
-        };
+    const handleEditMonthChange = (event) => {
+        setEditMonth(event.target.value);
     };
 
     const handleEditCommitment = (groupId, value) => {
-        const numValue = parseInt(value) || 0;
-        setEditedValues(prev => ({
-            ...prev,
-            [groupId]: numValue
-        }));
+        const parsedValue = Number.parseInt(value, 10);
+
+        setGroups((prev) => prev.map((group) => (
+            group.id === groupId
+                ? { ...group, monthEndCommitment: Number.isNaN(parsedValue) ? 0 : parsedValue }
+                : group
+        )));
     };
 
-    const handleSaveCommitments = () => {
-        // Update the releasePlan with edited values
-        const updatedGroups = releasePlan.groups.map(group => ({
+    const handleSaveCommitments = async () => {
+        setIsSaving(true);
+
+        const payload = groups.map((group) => ({
+            team: group.team,
+            actual: group.actual,
+            thisWeek: group.additionalThisWeek,
+            nextWeek: group.additionalNextWeek,
+            monthEnd: group.monthEndCommitment,
+        }));
+
+        const { success, message, data } = await updateReleasePlan({
+            date: monthValueToDate(editMonth),
+            groups: payload
+        });
+
+        setIsSaving(false);
+
+        if (!success) {
+            console.error(message);
+            toast.error(message);
+            return;
+        }
+
+        const savedGroups = mapApiGroups(data);
+        const savedMonthEndByTeam = new Map(
+            savedGroups.map((group) => [group.team, group.monthEndCommitment])
+        );
+
+        setGroups((prev) => prev.map((group) => ({
             ...group,
-            monthEndCommitment: editedValues[group.id] !== undefined ? editedValues[group.id] : group.monthEndCommitment
-        }));
-        
-        setReleasePlan(prev => ({
-            ...prev,
-            groups: updatedGroups,
-            totals: calculateTotals(updatedGroups)
-        }));
-        
-        setIsEditing(false);
+            monthEndCommitment: savedMonthEndByTeam.get(group.team) ?? group.monthEndCommitment
+        })));
+        toast.success(`Release plan saved for ${editMonth}.`);
     };
+
+    const totals = calculateTotals(groups);
 
     const handleExport = async () => {
         const headers = ["GROUP", "ACTUAL", "ADDITIONAL (THIS WEEK)", "ADDITIONAL (NEXT WEEK)", "MONTH-END COMMITMENT", "VARIANCE"];
-        const rows = releasePlan.groups.map(group => {
-            const commitment = editedValues[group.id] !== undefined ? editedValues[group.id] : group.monthEndCommitment;
-            const variance = Math.abs(group.actual - commitment);
-            return [
-                group.team,
-                group.actual,
-                group.additionalThisWeek,
-                group.additionalNextWeek,
-                commitment,
-                variance
-            ];
-        });
-        
-        const totals = calculateTotals(releasePlan.groups);
-        const varianceTotal = Math.abs(totals.actual - totals.monthEndCommitment);
+        const rows = groups.map((group) => [
+            getTeamDisplayName(group.team),
+            group.actual,
+            group.additionalThisWeek,
+            group.additionalNextWeek,
+            group.monthEndCommitment,
+            Math.abs(group.actual - group.monthEndCommitment)
+        ]);
+
         rows.push([
             "TOTAL",
             totals.actual,
             totals.additionalThisWeek,
             totals.additionalNextWeek,
             totals.monthEndCommitment,
-            varianceTotal
+            totals.variance
         ]);
 
         await exportToWord({
             title: "Release Plan",
-            subtitle: "Monthly release commitments and variance tracking",
+            subtitle: `View date ${selectedDate} with editable commitments for ${editMonth}`,
             headers,
             rows,
-            fileName: "Release_Plan_Report"
+            fileName: `Release_Plan_Report_${selectedDate}_${editMonth}`
         });
     };
 
@@ -122,29 +185,32 @@ export default function ReleasePlan() {
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
             <div className="grow p-8 space-y-8 overflow-auto">
-
-                {/* header */}
                 <div className="flex justify-between items-center gap-4 flex-wrap">
                     <div>
                         <PageTitle>Release Plan</PageTitle>
                         <PageSubTitle>Monthly release commitments and variance tracking</PageSubTitle>
                     </div>
-                    <div className="flex gap-4 items-center">
-                        <input 
-                            type="date" 
+                    <div className="flex gap-4 items-center flex-wrap">
+                        <input
+                            type="date"
                             value={selectedDate}
                             onChange={handleDateChange}
                             className="px-4 py-2 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-nissan-red bg-white hover:bg-gray-50 font-medium transition-colors"
                         />
-
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport}>
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport} disabled={isLoading}>
                             <FileDown size={16} /> Export
                         </button>
-
+                        <button
+                            className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
+                            onClick={handleSaveCommitments}
+                            disabled={isLoading || isSaving}
+                            title={`Save month-end commitments for ${editMonth}`}
+                        >
+                            {isSaving ? "Saving..." : "Save"}
+                        </button>
                     </div>
                 </div>
 
-                {/* Team Performance */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="table-style">
                         <table>
@@ -153,65 +219,69 @@ export default function ReleasePlan() {
                                     <td className="rowHeader">GROUP</td>
                                     <td>ACTUAL</td>
                                     <td>ADDITIONAL (THIS WEEK)</td>
-                                    <td>ADDTIONAL (NEXT WEEK)</td>
-                                    <td className="rowFooter flex items-center justify-between gap-2">
-                                        <span>MONTH-END COMMITMENT</span>
-                                        <button 
-                                            onClick={() => isEditing ? handleSaveCommitments() : setIsEditing(true)}
-                                            className="hover:bg-gray-200 p-1 rounded transition-colors"
-                                        >
-                                            <Pen size={16} />
-                                        </button>
+                                    <td>ADDITIONAL (NEXT WEEK)</td>
+                                    <td className="rowFooter">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span>MONTH-END COMMITMENT</span>
+                                            <input
+                                                type="month"
+                                                value={editMonth}
+                                                onChange={handleEditMonthChange}
+                                                className="px-1 py-1 border border-gray-300 rounded text-sm font-medium"
+                                            />
+                                        </div>
                                     </td>
                                     <td className="varianceCol">VARIANCE</td>
                                 </tr>
                             </thead>
                             <tbody>
-                                {releasePlan?.groups?.map(group => {
-                                    const commitment = editedValues[group.id] !== undefined ? editedValues[group.id] : group.monthEndCommitment;
-                                    const variance = Math.abs(group.actual - commitment);
-                                    const isNegative = group.actual < commitment;
-                                    
+                                {isLoading && (
+                                    <tr>
+                                        <td className="rowHeader" colSpan={6}>Loading release plan...</td>
+                                    </tr>
+                                )}
+
+                                {!isLoading && groups.map((group) => {
+                                    const variance = Math.abs(group.actual - group.monthEndCommitment);
+                                    const isBehind = group.actual < group.monthEndCommitment;
+
                                     return (
                                         <tr key={group.id}>
-                                            <td className="rowHeader">{group.team}</td>
+                                            <td className="rowHeader">{getTeamDisplayName(group.team)}</td>
                                             <td>{group.actual}</td>
                                             <td>{group.additionalThisWeek}</td>
                                             <td>{group.additionalNextWeek}</td>
                                             <td className="rowFooter">
-                                                {isEditing ? (
-                                                    <input 
-                                                        type="number" 
-                                                        value={editedValues[group.id] !== undefined ? editedValues[group.id] : group.monthEndCommitment}
-                                                        onChange={(e) => handleEditCommitment(group.id, e.target.value)}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded"
-                                                    />
-                                                ) : (
-                                                    commitment
-                                                )}
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={group.monthEndCommitment}
+                                                    onChange={(event) => handleEditCommitment(group.id, event.target.value)}
+                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-center"
+                                                />
                                             </td>
-                                            <td className={`varianceCol ${isNegative ? 'text-nissan-red' : 'text-green-600'}`}>
+                                            <td className={`varianceCol ${isBehind ? "text-nissan-red" : "text-green-600"}`}>
                                                 {variance}
                                             </td>
                                         </tr>
-                                    )
+                                    );
                                 })}
+
+                                {!isLoading && groups.length === 0 && (
+                                    <tr>
+                                        <td className="rowHeader" colSpan={6}>No release plan data found.</td>
+                                    </tr>
+                                )}
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td className="rowHeader">TOTAL</td>
-                                    <td>{calculateTotals(releasePlan.groups).actual}</td>
-                                    <td>{calculateTotals(releasePlan.groups).additionalThisWeek}</td>
-                                    <td>{calculateTotals(releasePlan.groups).additionalNextWeek}</td>
-                                    <td className="rowFooter">
-                                        {isEditing ? (
-                                            <span className="text-gray-500">{calculateTotals(releasePlan.groups).monthEndCommitment}</span>
-                                        ) : (
-                                            calculateTotals(releasePlan.groups).monthEndCommitment
-                                        )}
-                                    </td>
-                                    <td className={`varianceCol ${calculateTotals(releasePlan.groups).actual < calculateTotals(releasePlan.groups).monthEndCommitment ? 'text-nissan-red' : 'text-green-600'}`}>
-                                        {Math.abs(calculateTotals(releasePlan.groups).actual - calculateTotals(releasePlan.groups).monthEndCommitment)}
+                                    <td>{totals.actual}</td>
+                                    <td>{totals.additionalThisWeek}</td>
+                                    <td>{totals.additionalNextWeek}</td>
+                                    <td className="rowFooter">{totals.monthEndCommitment}</td>
+                                    <td className={`varianceCol ${totals.actual < totals.monthEndCommitment ? "text-nissan-red" : "text-green-600"}`}>
+                                        {totals.variance}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -219,31 +289,28 @@ export default function ReleasePlan() {
                     </div>
                 </div>
 
-                {/* totals */}
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm">Total Actual</p>
-                        <h2 className="font-bold">{calculateTotals(releasePlan.groups).actual}</h2>
+                        <h2 className="font-bold">{totals.actual}</h2>
                         <p className="text-xs">Current completed releases</p>
                     </div>
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm">Total Commitment</p>
-                        <h2 className="font-bold text-blue-600">{calculateTotals(releasePlan.groups).monthEndCommitment}</h2>
-                        <p className="text-xs">Total Commitment</p>
+                        <h2 className="font-bold text-blue-600">{totals.monthEndCommitment}</h2>
+                        <p className="text-xs">month total commitment</p>
                     </div>
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm">Total Variance</p>
-                        <h2 className={`font-bold ${calculateTotals(releasePlan.groups).actual >= calculateTotals(releasePlan.groups).monthEndCommitment ? 'text-green-600' : 'text-nissan-red'}`}>
-                            {Math.abs(calculateTotals(releasePlan.groups).actual - calculateTotals(releasePlan.groups).monthEndCommitment)}
+                        <h2 className={`font-bold ${totals.actual >= totals.monthEndCommitment ? "text-green-600" : "text-nissan-red"}`}>
+                            {totals.variance}
                         </h2>
-                        <p className="text-xs">commitment vs Actual</p>
+                        <p className="text-xs">Total Variance</p>
                     </div>
                 </div>
             </div>
-
-        </div >
-    )
+        </div>
+    );
 }
