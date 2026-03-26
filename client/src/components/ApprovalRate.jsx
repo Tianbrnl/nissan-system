@@ -18,7 +18,14 @@ export default function ApprovalRate({ teams = [] }) {
         )
     }
 
-    teams = teams?.map(team => ({ name: team?.name, approvalRate: Math.round(((team?.appliedApproved + team?.appliedNotApproved) / team?.applications) * 100) }));
+    teams = teams?.map(team => {
+        const totalApproved = (team?.appliedApproved ?? 0) + (team?.appliedNotApproved ?? 0);
+        const approvalRate = team?.applications > 0
+            ? Math.round((totalApproved / team.applications) * 100)
+            : 0;
+
+        return { name: team?.name, approvalRate };
+    });
 
     return (
             <ResponsiveContainer width="100%" height="100%">

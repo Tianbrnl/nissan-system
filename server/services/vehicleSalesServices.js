@@ -64,6 +64,8 @@ export const getReservationByTeamMonthly = async () => {
         attributes: ["teamCode", "teamLeader"]
       }
     ],
+    
+    
     where: {
       reservedAt: {
         [Op.not]: null,

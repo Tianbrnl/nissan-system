@@ -18,7 +18,14 @@ export default function AvailmentRate({ teams = [] }) {
         )
     }
 
-    teams = teams?.map(team => ({ name: team?.name, availmentRate: Math.round((team?.availed / team?.appliedApproved) * 100) }));
+    teams = teams?.map(team => {
+        const totalApproved = (team?.appliedApproved ?? 0) + (team?.appliedNotApproved ?? 0);
+        const availmentRate = totalApproved > 0
+            ? Math.round(((team?.availed ?? 0) / totalApproved) * 100)
+            : 0;
+
+        return { name: team?.name, availmentRate };
+    });
 
     return (
         <ResponsiveContainer width="100%" height="100%">

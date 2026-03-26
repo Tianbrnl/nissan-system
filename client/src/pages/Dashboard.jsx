@@ -137,7 +137,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                     <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
-                        <p className="text-lg font-semibold">Target vs Actual</p>
+                        <p className="text-lg font-semibold">Application vs Sold</p>
                         <div className="h-70">
                             <TargetActual />
                         </div>
