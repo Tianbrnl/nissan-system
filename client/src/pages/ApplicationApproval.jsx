@@ -5,6 +5,28 @@ import ApprovalRate from "../components/ApprovalRate";
 import AvailmentRate from "../components/AvailmentRate";
 
 export default function ApplicationApproval() {
+    const APPROVAL_TARGET = 40;
+    const AVAILMENT_TARGET = 75;
+
+    const calculateApprovalRate = (applications, appliedApproved, appliedNotApproved) => {
+        const totalApproved = (appliedApproved ?? 0) + (appliedNotApproved ?? 0);
+
+        if (!applications) return 0;
+
+        return Math.round((totalApproved / applications) * 100);
+    };
+
+    const calculateAvailmentRate = (availed, appliedApproved, appliedNotApproved) => {
+        const totalApproved = (appliedApproved ?? 0) + (appliedNotApproved ?? 0);
+
+        if (!totalApproved) return 0;
+
+        return Math.round(((availed ?? 0) / totalApproved) * 100);
+    };
+
+    const getRateColorClass = (rate, target) => (
+        rate >= target ? "text-green-600" : "text-red-600"
+    );
 
     const totals = {
         applications: 165,
@@ -41,10 +63,10 @@ export default function ApplicationApproval() {
             {
                 id: 1,
                 name: 'NSR1 – Mike',
-                applications: 25,
-                appliedApproved: 18,
-                appliedNotApproved: 4,
-                availed: 16,
+                applications: 36,
+                appliedApproved: 8,
+                appliedNotApproved: 2,
+                availed: 8,
             },
             {
                 id: 2,
@@ -206,8 +228,8 @@ export default function ApplicationApproval() {
                                     <td>APPROVED (AS APPLIED)</td>
                                     <td>APPROVED (NOT AS APPLIED)</td>
                                     <td>AVAILED</td>
-                                    <td>APPROVAL RATE</td>
-                                    <td>AVAILMENT RATE</td>
+                                    <td>APPROVAL RATE <span className="text-xs font-normal text-nissan-black">(Target: 40%)</span></td>
+                                    <td>AVAILMENT RATE <span className="text-xs font-normal text-nissan-black">(Target: 75%)</span></td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -219,8 +241,12 @@ export default function ApplicationApproval() {
                                         <td className={team?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{team?.appliedNotApproved}</td>
                                         <td className={team?.availed > 0 ? '' : 'text-nissan-gray'}>{team?.availed}</td>
 
-                                        <td className="font-bold text-green-600">{Math.round(((team?.appliedApproved + team?.appliedNotApproved) / team?.applications) * 100)}%</td>
-                                        <td className="font-bold text-green-600">{Math.round((team?.availed / team?.appliedApproved) * 100)}%</td>
+                                        <td className={`font-bold ${getRateColorClass(calculateApprovalRate(team?.applications, team?.appliedApproved, team?.appliedNotApproved), APPROVAL_TARGET)}`}>
+                                            {calculateApprovalRate(team?.applications, team?.appliedApproved, team?.appliedNotApproved)}%
+                                        </td>
+                                        <td className={`font-bold ${getRateColorClass(calculateAvailmentRate(team?.availed, team?.appliedApproved, team?.appliedNotApproved), AVAILMENT_TARGET)}`}>
+                                            {calculateAvailmentRate(team?.availed, team?.appliedApproved, team?.appliedNotApproved)}%
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -232,8 +258,12 @@ export default function ApplicationApproval() {
                                     <td className={teamPerformance?.totals?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.appliedNotApproved}</td>
                                     <td className={teamPerformance?.totals?.availed > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.availed}</td>
 
-                                    <td className="font-bold text-green-600">{Math.round(((teamPerformance?.totals?.appliedApproved + teamPerformance?.totals?.appliedNotApproved) / teamPerformance?.totals?.applications) * 100)}%</td>
-                                    <td className="font-bold text-green-600">{Math.round((teamPerformance?.totals?.availed / teamPerformance?.totals?.appliedApproved) * 100)}%</td>
+                                    <td className={`font-bold ${getRateColorClass(calculateApprovalRate(teamPerformance?.totals?.applications, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved), APPROVAL_TARGET)}`}>
+                                        {calculateApprovalRate(teamPerformance?.totals?.applications, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved)}%
+                                    </td>
+                                    <td className={`font-bold ${getRateColorClass(calculateAvailmentRate(teamPerformance?.totals?.availed, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved), AVAILMENT_TARGET)}`}>
+                                        {calculateAvailmentRate(teamPerformance?.totals?.availed, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved)}%
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>

@@ -14,18 +14,18 @@ const teams = [
 
     {
         month: 'Dec',
-        target: 50,
-        actual: 45,
+        Application: 50,
+        Sold: 45,
     },
     {
         month: 'Jan',
-        target: 55,
-        actual: 52,
+        Application: 55,
+        Sold: 52,
     },
     {
         month: 'Feb',
-        target: 60,
-        actual: 50,
+        Application: 60,
+        Sold: 50,
     },
 ];
 
@@ -41,8 +41,8 @@ export default function TargetActual() {
                 <YAxis />
                 <Tooltip />
                 <Legend/>
-                <Bar dataKey="target" fill="#94A3B8" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="actual" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Application" fill="#94A3B8" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Sold" fill="#3b82f6" radius={[8, 8, 0, 0]} />
             </BarChart>
         </ResponsiveContainer>
     );
