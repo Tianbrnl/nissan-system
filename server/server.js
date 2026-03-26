@@ -10,6 +10,7 @@ import variantRouter from './routes/variantRoutes.js';
 import vehicleSalesRouter from './routes/vehicleSalesRoutes.js';
 import dashboardRouter from './routes/dashboardRoutes.js';
 import releaseRouter from "./routes/releaseRoutes.js";
+import applicationsApprovalsRouter from './routes/applicationsApprovalsRoutes.js';
 
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use('/api/variant', variantRouter);
 app.use('/api/vehicleSales', vehicleSalesRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use("/api/release", releaseRouter);
+app.use("/api/applicationsApprovals", applicationsApprovalsRouter);
 
 // START SERVER
 const startServer = async () => {

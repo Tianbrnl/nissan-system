@@ -48,6 +48,7 @@ const normalizeFilterValue = (value) => {
 const shouldApplyNamedFilter = (value, allValueLabel) => {
     return value && value !== allValueLabel;
 };
+
 // CREATE PIPELINE
 export const createPipelineService = async (
     targetReleased,
@@ -77,7 +78,7 @@ export const createPipelineService = async (
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||
-            !grm.trim() ||
+            !grm ||
             !normalizedMonthStart
         ) {
             return {
@@ -335,14 +336,11 @@ export const updatePipelineService = async (
         const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased;
 
         if (
-            !normalizedTargetReleased ||
-            !unit ||
+            !unit.trim() ||
             !color.trim() ||
-            !csNumber.trim() ||
             !transaction.trim() ||
             !client.trim() ||
-            !grm ||
-            !status.trim() ||
+            !grm||
             !normalizedMonthStart
         ) {
             return {

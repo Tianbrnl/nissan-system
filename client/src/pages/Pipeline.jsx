@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { FileDown, Pen, Plus, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
@@ -266,7 +267,7 @@ export default function Pipeline() {
                 {/* Team Performance */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="table-style">
-                        <table className="table-fixed min-w-[1400px] text-sm">
+                        <table className="table-fixed min-w-350 text-sm">
                             <thead>
                                 <tr>
                                     <td >CLOSED</td>
