@@ -162,10 +162,22 @@ export default function Pipeline() {
 
     const handleFilterChange = (event) => {
         const { name, value } = event.target;
-        setFilters((prev) => ({
+
+        const nextFilters = {
+            ...filters,
+            [name]: value,
+        };
+
+        setFilters(nextFilters);
+
+        // auto apply filters for status / grm / model
+        setAppliedFilters((prev) => ({
             ...prev,
-            [name]: value
+            [name]: value,
         }));
+
+        // reset page to first when filter is updated
+        setCurrentPage(1);
     };
 
     const handleSearch = () => {
