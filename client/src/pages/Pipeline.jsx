@@ -11,6 +11,17 @@ import { readAllPipeline } from "../services/pipelineServices";
 import DeletePipeline from "../components/Pipeline/DeletePipeline";
 import { readAllGrm } from "../services/teamServices";
 import { selectReadAllVariant } from "../services/variantServices";
+import {getCurrentMonthYear} from "../utils/tools";
+
+
+const normalizeMonthValue = (value) => {
+    if (typeof value !== "string") {
+        return "";
+    }
+
+    const trimmedValue = value.trim();
+    return /^\d{4}-\d{2}$/.test(trimmedValue) ? trimmedValue : "";
+};
 
 export default function Pipeline() {
     const PAGE_SIZE = 10;
@@ -39,6 +50,7 @@ export default function Pipeline() {
 
     const [pipelineId, setPipelineId] = useState(null);
     const [searchInput, setSearchInput] = useState("");
+    const [selectedMonth, setSelectedMonth] = useState(() => getCurrentMonthYear());
     const [filters, setFilters] = useState({
         status: "All Statuses",
         grm: "All GRMs",
@@ -76,6 +88,7 @@ export default function Pipeline() {
         const { success, message, data: pipelines = [], pagination: paginationData } = await readAllPipeline({
             page,
             limit: PAGE_SIZE,
+            month: selectedMonth,
             search: activeFilters.search,
             status: activeFilters.status,
             grm: activeFilters.grm,
@@ -108,7 +121,11 @@ export default function Pipeline() {
         } catch (error) {
             console.error(error);
         }
-    }, [currentPage, appliedFilters]);
+    }, [currentPage, appliedFilters, selectedMonth]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedMonth]);
 
     useEffect(() => {
         const loadFilterOptions = async () => {
@@ -192,6 +209,10 @@ export default function Pipeline() {
         setCurrentPage(1);
     };
 
+    const handleMonthChange = (event) => {
+        setSelectedMonth(normalizeMonthValue(event.target.value) || getCurrentMonthYear());
+    };
+
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -239,7 +260,8 @@ export default function Pipeline() {
                             Search
                         </button>
                     </div>
-                    <div className="grid lg:grid-cols-3 gap-4">
+                    <div className="grid lg:grid-cols-4 gap-4">
+
                         <Select
                             label="Filter by Status"
                             name="status"
@@ -260,6 +282,13 @@ export default function Pipeline() {
                             value={filters.model}
                             options={modelOptions}
                             onChange={handleFilterChange}
+                        />
+                                                <Input
+                            label="Filter by Month"
+                            type="month"
+                            name="month"
+                            value={selectedMonth}
+                            onChange={handleMonthChange}
                         />
                     </div>
                 </div>
