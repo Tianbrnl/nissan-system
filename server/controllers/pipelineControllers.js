@@ -77,7 +77,24 @@ export const readOnePipelineController = async (req, res) => {
 // READ ALL PIPELINE
 export const readAllPipelineController = async (req, res) => {
     try {
-        const result = await readAllPipelineService();
+        const {
+            page,
+            limit,
+            month,
+            search,
+            status,
+            grm,
+            model
+        } = req.query;
+        const result = await readAllPipelineService({
+            page: Number.parseInt(page, 10),
+            limit: Number.parseInt(limit, 10),
+            month,
+            search,
+            status,
+            grm,
+            model
+        });
 
         return res.json(result);
     } catch (error) {

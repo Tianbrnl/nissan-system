@@ -8,23 +8,56 @@ import CreatePipeline from "../components/Pipeline/CreatePipeline";
 import UpdatePipeline from "../components/Pipeline/UpdatePipeline";
 import { readAllPipeline } from "../services/pipelineServices";
 import DeletePipeline from "../components/Pipeline/DeletePipeline";
+import { readAllGrm } from "../services/teamServices";
+import { selectReadAllVariant } from "../services/variantServices";
 
 export default function Pipeline() {
+    const PAGE_SIZE = 10;
+    const STATUS_OPTIONS = [
+        { value: "All Statuses", name: "All Statuses" },
+        { value: "Sold", name: "Sold" },
+        { value: "For Release", name: "For Release" },
+        { value: "w/ Payment", name: "w/ Payment" },
+        { value: "For Bank Approval", name: "For Bank Approval" },
+    ];
 
     const [data, setData] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [pagination, setPagination] = useState({
+        totalItems: 0,
+        totalPages: 0,
+        currentPage: 1,
+        pageSize: PAGE_SIZE,
+    });
+    const [isLoading, setIsLoading] = useState(false);
 
     const [showCreate, setshowCreate] = useState(false);
     const [showUpdate, setShowUpdate] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
 
     const [pipelineId, setPipelineId] = useState(null);
+    const [searchInput, setSearchInput] = useState("");
+    const [filters, setFilters] = useState({
+        status: "All Statuses",
+        grm: "All GRMs",
+        model: "All Models",
+    });
+    const [appliedFilters, setAppliedFilters] = useState({
+        search: "",
+        status: "All Statuses",
+        grm: "All GRMs",
+        model: "All Models",
+    });
+    const [grmOptions, setGrmOptions] = useState([{ value: "All GRMs", name: "All GRMs" }]);
+    const [modelOptions, setModelOptions] = useState([{ value: "All Models", name: "All Models" }]);
 
     const totals = {
-        entries: 3,
+        entries: pagination.totalItems,
         sold: 1,
         forRelease: 1,
         bankApproval: 1,
-    }
+    };
 
     const handleEdit = (id) => {
         setPipelineId(id);
@@ -37,23 +70,114 @@ export default function Pipeline() {
 
     }
 
-    const loadTable = async () => {
-        const { success, message, pipelines } = await readAllPipeline();
+    const loadTable = async (page = currentPage, activeFilters = appliedFilters) => {
+        setIsLoading(true);
+        const { success, message, data: pipelines = [], pagination: paginationData } = await readAllPipeline({
+            page,
+            limit: PAGE_SIZE,
+            search: activeFilters.search,
+            status: activeFilters.status,
+            grm: activeFilters.grm,
+            model: activeFilters.model,
+        });
+
         if (success) {
-            return setData(pipelines);
+            setData(pipelines);
+            setPagination(paginationData ?? {
+                totalItems: 0,
+                totalPages: 0,
+                currentPage: page,
+                pageSize: PAGE_SIZE,
+            });
+            setTotalPages(paginationData?.totalPages ?? 0);
+            setCurrentPage(paginationData?.currentPage ?? page);
+            setIsLoading(false);
+            return;
         }
+
+        setIsLoading(false);
         console.error(message);
     }
 
     useEffect(() => {
         try {
             queueMicrotask(() => {
-                loadTable();
+                loadTable(currentPage, appliedFilters);
             })
         } catch (error) {
             console.error(error);
         }
+    }, [currentPage, appliedFilters]);
+
+    useEffect(() => {
+        const loadFilterOptions = async () => {
+            const [{ success: grmSuccess, message: grmMessage, grms = [] }, { success: modelSuccess, message: modelMessage, variants = [] }] = await Promise.all([
+                readAllGrm(),
+                selectReadAllVariant()
+            ]);
+
+            if (grmSuccess) {
+                setGrmOptions([
+                    { value: "All GRMs", name: "All GRMs" },
+                    ...grms.map((grm) => ({ value: grm.name, name: grm.name }))
+                ]);
+            } else {
+                console.error(grmMessage);
+            }
+
+            if (modelSuccess) {
+                setModelOptions([
+                    { value: "All Models", name: "All Models" },
+                    ...variants.map((variant) => ({ value: variant.name, name: variant.name }))
+                ]);
+            } else {
+                console.error(modelMessage);
+            }
+        };
+
+        loadFilterOptions();
     }, []);
+
+    const handlePreviousPage = () => {
+        if (currentPage <= 1) {
+            return;
+        }
+
+        setCurrentPage((prev) => prev - 1);
+    };
+
+    const handleNextPage = () => {
+        if (currentPage >= totalPages) {
+            return;
+        }
+
+        setCurrentPage((prev) => prev + 1);
+    };
+
+    const refreshCurrentPage = async () => {
+        const safePage = totalPages > 0 && currentPage > totalPages ? totalPages : currentPage;
+        await loadTable(safePage || 1, appliedFilters);
+    };
+
+    const handleFilterChange = (event) => {
+        const { name, value } = event.target;
+        setFilters((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSearch = () => {
+        const nextFilters = {
+            search: searchInput.trim(),
+            status: filters.status,
+            grm: filters.grm,
+            model: filters.model,
+        };
+
+        setAppliedFilters(nextFilters);
+        setCurrentPage(1);
+    };
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -84,23 +208,45 @@ export default function Pipeline() {
                     <div className="flex gap-4">
                         <div className="grow">
                             <Input
+                                value={searchInput}
                                 placeholder="Search by CS Number, Client, or Variant..."
+                                onChange={(event) => setSearchInput(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                        handleSearch();
+                                    }
+                                }}
                             />
                         </div>
-                        <button className="btn bg-nissan-red rounded-xl text-white">Search</button>
+                        <button
+                            className="btn bg-nissan-red rounded-xl text-white"
+                            onClick={handleSearch}
+                            disabled={isLoading}
+                        >
+                            Search
+                        </button>
                     </div>
                     <div className="grid lg:grid-cols-3 gap-4">
                         <Select
                             label="Filter by Status"
-                            placeholder="All Statuses"
+                            name="status"
+                            value={filters.status}
+                            options={STATUS_OPTIONS}
+                            onChange={handleFilterChange}
                         />
                         <Select
                             label="Filter by GRM"
-                            placeholder="All GRMs"
+                            name="grm"
+                            value={filters.grm}
+                            options={grmOptions}
+                            onChange={handleFilterChange}
                         />
                         <Select
                             label="Filter by Model"
-                            placeholder="All Models"
+                            name="model"
+                            value={filters.model}
+                            options={modelOptions}
+                            onChange={handleFilterChange}
                         />
                     </div>
                 </div>
@@ -108,11 +254,11 @@ export default function Pipeline() {
                 {/* Team Performance */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="table-style">
-                        <table>
+                        <table className="table-fixed min-w-[1400px] text-sm">
                             <thead>
                                 <tr>
-                                    <td>CLOSED</td>
-                                    <td>TARGET RELEASE</td>
+                                    <td >CLOSED</td>
+                                    <td >TARGET RELEASE</td>
                                     <td>VARIANT</td>
                                     <td>UNIT</td>
                                     <td>COLOR</td>
@@ -128,9 +274,15 @@ export default function Pipeline() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data?.map((sale, index) => (
+                                {isLoading && (
+                                    <tr>
+                                        <td colSpan={14} className="text-center py-6">Loading pipeline data...</td>
+                                    </tr>
+                                )}
+
+                                {!isLoading && data?.map((sale, index) => (
                                     <tr key={sale?.id}>
-                                        <td>{index + 1}</td>
+                                        <td>{((pagination.currentPage - 1) * pagination.pageSize) + index + 1}</td>
                                         <td>{sale?.targetReleased ? sale?.targetReleased : '-'}</td>
                                         <td>{sale?.unit?.variant?.name ? sale?.unit?.variant?.name : '-'}</td>
                                         <td>{sale?.unit.name ? sale?.unit.name : '-'}</td>
@@ -172,8 +324,35 @@ export default function Pipeline() {
                                         </td>
                                     </tr>
                                 ))}
+
+                                {!isLoading && data?.length === 0 && (
+                                    <tr>
+                                        <td colSpan={14} className="text-center py-6">No pipeline data found.</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 border-t border-gray-300 px-4 py-3">
+                        <p className="text-sm text-gray-600">
+                            Page {pagination.totalPages === 0 ? 1 : pagination.currentPage} of {pagination.totalPages}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                className="btn rounded-xl border border-gray-300 disabled:opacity-50"
+                                onClick={handlePreviousPage}
+                                disabled={isLoading || currentPage <= 1}
+                            >
+                                Previous
+                            </button>
+                            <button
+                                className="btn rounded-xl border border-gray-300 disabled:opacity-50"
+                                onClick={handleNextPage}
+                                disabled={isLoading || totalPages === 0 || currentPage >= totalPages}
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -206,7 +385,7 @@ export default function Pipeline() {
             {showCreate &&
                 <CreatePipeline
                     onClose={() => setshowCreate(false)}
-                    runAfter={loadTable}
+                    runAfter={refreshCurrentPage}
                 />
             }
 
@@ -215,7 +394,7 @@ export default function Pipeline() {
                 <UpdatePipeline
                     pipelineId={pipelineId}
                     onClose={() => setShowUpdate(false)}
-                    runAfter={loadTable}
+                    runAfter={refreshCurrentPage}
                 />
             }
 
@@ -224,7 +403,7 @@ export default function Pipeline() {
                 <DeletePipeline
                     pipelineId={pipelineId}
                     onClose={() => setShowDelete(false)}
-                    runAfter={loadTable}
+                    runAfter={refreshCurrentPage}
                 />
             }
         </div >

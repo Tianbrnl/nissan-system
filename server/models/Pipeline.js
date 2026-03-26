@@ -71,7 +71,18 @@ const Pipelines = sequelize.define('pipeline', {
         allowNull: true
     },
 }, {
-    paranoid: true
+    paranoid: true,
+    indexes: [
+        {
+            fields: ['targetReleased']
+        },
+        {
+            fields: ['teamId']
+        },
+        {
+            fields: ['targetReleased', 'teamId']
+        }
+    ]
 });
 
 export default Pipelines;
