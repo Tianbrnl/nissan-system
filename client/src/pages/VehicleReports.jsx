@@ -1,49 +1,18 @@
 import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
-import { useState, useEffect  } from "react";
+import { useState, useEffect } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CreateVariant from "../components/VehicleReports/CreateVariant";
 import UpdateUnit from "../components/VehicleReports/UpdateUnit";
 import UpdateVariant from "../components/VehicleReports/UpdateVariant";
 import { exportToWord } from "../utils/ExportToWord";
 import {
-  fetchVehicleSalesReport,
-  fetchPaymentTermReport,
-  fetchReservationByTeamReport
+    fetchVehicleSalesReport,
+    fetchPaymentTermReport,
+    fetchReservationByTeamReport
 } from "../services/vehicleSales";
-
-const generateYearMonths = (year) => {
-    return [
-        `JAN `,
-        `FEB `,
-        `MAR `,
-        `APR `,
-        `MAY `,
-        `JUN `,
-        `JUL `,
-        `AUG `,
-        `SEP `,
-        `OCT `,
-        `NOV `,
-        `DEC `
-    ];
-};
-
-const getMonthIndex = (value, year) => {
-    if (!value) return -1;
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return -1;
-
-    // Filter out dates not in the selected year
-    if (date.getFullYear() !== year) return -1;
-
-    // Return 0-based month index (0 = January, 11 = December)
-    return date.getMonth();
-};
-
-const toNumber = (value) => Number(value) || 0;
+import { generateYearMonths, getMonthIndex, toNumber } from "../utils/tools";
 
 const transformVehicleSales = (data, year) => {
     const months = 12;
@@ -52,7 +21,7 @@ const transformVehicleSales = (data, year) => {
 
     data.forEach(item => {
         const unitId = item.unitId ?? item.unit?.id ?? item.Unit?.id ?? item.id;
-        const unit = item.unitName || item.unit?.name || item.Unit?.name || item.unit ;
+        const unit = item.unitName || item.unit?.name || item.Unit?.name || item.unit;
         const monthIndex = getMonthIndex(item.targetReleaseDate, year);
         const total = toNumber(item.total ?? 1);
 
@@ -112,12 +81,12 @@ const transformReservation = (data, year) => {
     data.forEach(item => {
         const teamInfo = item.team || item.Team;
         const teamId = item.teamId ?? teamInfo?.id;
-        const team = 
-            teamInfo?.teamLeader ||   
+        const team =
+            teamInfo?.teamLeader ||
             teamInfo?.teamName ||
             teamInfo?.name ||
             item.teamName ||
-            teamInfo?.teamCode ||     
+            teamInfo?.teamCode ||
             item.teamCode ||
             "Unknown";
         const monthIndex = getMonthIndex(item.reservedDate, year);
@@ -142,7 +111,7 @@ const transformReservation = (data, year) => {
         totals
     };
 };
- 
+
 export default function VehicleReports() {
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -158,7 +127,7 @@ export default function VehicleReports() {
     const [paymentTerm, setPaymentTerm] = useState({ payment: [], totals: [] });
     const [reservationByTeam, setReservationByTeam] = useState({ teams: [], totals: [] });
 
-    const dates = generateYearMonths(year).map(name => ({ value: '', name }));
+    const dates = generateYearMonths().map(name => ({ value: '', name }));
 
     // Generate year range from 2025 to 2100
     const getYearRange = () => {
@@ -170,7 +139,7 @@ export default function VehicleReports() {
         setShowUpdateUnit(true);
     }
 
-    const months = generateYearMonths(year);
+    const months = generateYearMonths();
 
     const handleExportVehicleSales = async () => {
         const headers = ["UNITS", ...months, "TOTAL"];
@@ -311,11 +280,10 @@ export default function VehicleReports() {
                                                         setYear(y);
                                                         setYearDropdownOpen(false);
                                                     }}
-                                                    className={`px-2 py-2 text-sm rounded-lg font-medium transition-all cursor-pointer border-2 ${
-                                                        y === year
+                                                    className={`px-2 py-2 text-sm rounded-lg font-medium transition-all cursor-pointer border-2 ${y === year
                                                             ? 'bg-nissan-red text-white border-nissan-red font-bold'
                                                             : 'bg-white text-gray-700 border-gray-200 hover:border-nissan-red hover:text-nissan-red'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {y}
                                                 </button>

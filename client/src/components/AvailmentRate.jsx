@@ -24,7 +24,7 @@ export default function AvailmentRate({ teams = [] }) {
             ? Math.round(((team?.availed ?? 0) / totalApproved) * 100)
             : 0;
 
-        return { name: team?.name, availmentRate };
+        return { name: team?.team, availmentRate };
     });
 
     return (

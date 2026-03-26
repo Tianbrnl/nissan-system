@@ -5,6 +5,7 @@ import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { fetchReleasePlan, updateReleasePlan } from "../services/releaseServices";
 import { exportToWord } from "../utils/ExportToWord";
+import Input from "../components/ui/Input";
 
 const getTodayString = () => new Date().toISOString().split("T")[0];
 const getTodayMonthString = () => getTodayString().slice(0, 7);
@@ -200,14 +201,7 @@ export default function ReleasePlan() {
                         <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport} disabled={isLoading}>
                             <FileDown size={16} /> Export
                         </button>
-                        <button
-                            className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
-                            onClick={handleSaveCommitments}
-                            disabled={isLoading || isSaving}
-                            title={`Save month-end commitments for ${editMonth}`}
-                        >
-                            {isSaving ? "Saving..." : "Save"}
-                        </button>
+
                     </div>
                 </div>
 
@@ -223,12 +217,21 @@ export default function ReleasePlan() {
                                     <td className="rowFooter">
                                         <div className="flex items-center justify-between gap-2">
                                             <span>MONTH-END COMMITMENT</span>
-                                            <input
-                                                type="month"
-                                                value={editMonth}
-                                                onChange={handleEditMonthChange}
-                                                className="px-1 py-1 border border-gray-300 rounded text-sm font-medium"
-                                            />
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    type="month"
+                                                    value={editMonth}
+                                                    onChange={handleEditMonthChange}
+                                                />
+                                                <button
+                                                    className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
+                                                    onClick={handleSaveCommitments}
+                                                    disabled={isLoading || isSaving}
+                                                    title={`Save month-end commitments for ${editMonth}`}
+                                                >
+                                                    {isSaving ? "Saving..." : "Save"}
+                                                </button>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="varianceCol">VARIANCE</td>

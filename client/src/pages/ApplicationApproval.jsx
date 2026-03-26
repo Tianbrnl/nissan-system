@@ -3,95 +3,39 @@ import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import ApprovalRate from "../components/ApprovalRate";
 import AvailmentRate from "../components/AvailmentRate";
+import { useEffect } from "react";
+import { fetchApplicationsApprovals, fetchTeamPerformance } from "../services/applicationsApprovals";
+import { useState } from "react";
+import { getCurrentMonthYear } from "../utils/tools";
+import Input from "../components/ui/Input";
+import { calculateApprovalRate, calculateAvailmentRate, getRateColorClass } from "../utils/calculation";
 
 export default function ApplicationApproval() {
+
     const APPROVAL_TARGET = 40;
     const AVAILMENT_TARGET = 75;
 
-    const calculateApprovalRate = (applications, appliedApproved, appliedNotApproved) => {
-        const totalApproved = (appliedApproved ?? 0) + (appliedNotApproved ?? 0);
+    const [monthYear, setMonthYear] = useState(getCurrentMonthYear);
 
-        if (!applications) return 0;
+    const [applicationsApprovalsData, setApplicationsApprovalsData] = useState([]);
+    const [teamPerformanceData, setTeamPerformanceData] = useState([]);
 
-        return Math.round((totalApproved / applications) * 100);
-    };
-
-    const calculateAvailmentRate = (availed, appliedApproved, appliedNotApproved) => {
-        const totalApproved = (appliedApproved ?? 0) + (appliedNotApproved ?? 0);
-
-        if (!totalApproved) return 0;
-
-        return Math.round(((availed ?? 0) / totalApproved) * 100);
-    };
-
-    const getRateColorClass = (rate, target) => (
-        rate >= target ? "text-green-600" : "text-red-600"
-    );
-
-    const totals = {
-        applications: 165,
-        approved: 138,
-        availed: 93,
-        rate: 84,
-    }
-
-    const dates = [
-        { value: '', name: 'DEC 2025' },
-        { value: '', name: 'JAN 2026' },
-        { value: '', name: 'FEB 2026' },
-        { value: '', name: 'MAR 2026' },
-        { value: '', name: 'APR 2026' },
-        { value: '', name: 'MAY 2026' },
-        { value: '', name: 'JUN 2026' },
-        { value: '', name: 'JUL 2026' },
-        { value: '', name: 'AUG 2026' },
-        { value: '', name: 'SEP 2026' },
-        { value: '', name: 'OCT 2026' },
-        { value: '', name: 'NOV 2026' },
-        { value: '', name: 'DEC 2026' }
-    ];
-
-    const applicationsApprovals = {
-        applied: [60, 55, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        appliedApproved: [40, 38, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        appliedNotApproved: [10, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        availed: [35, 30, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        totals: [60, 55, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    }
-    const teamPerformance = {
-        teams: [
-            {
-                id: 1,
-                name: 'NSR1 – Mike',
-                applications: 36,
-                appliedApproved: 8,
-                appliedNotApproved: 2,
-                availed: 8,
-            },
-            {
-                id: 2,
-                name: 'NSR2 – Jhoven',
-                applications: 20,
-                appliedApproved: 15,
-                appliedNotApproved: 3,
-                availed: 13,
-            },
-            {
-                id: 3,
-                name: 'NSR3 – Jayr',
-                applications: 15,
-                appliedApproved: 7,
-                appliedNotApproved: 3,
-                availed: 6,
-            }
-        ],
-        totals: {
-            applications: 60,
-            appliedApproved: 40,
-            appliedNotApproved: 10,
-            availed: 35,
+    useEffect(() => {
+        const loadApplicationsApprovals = async () => {
+            const formattedToYear = monthYear.substring(0, 4);
+            const { success, message, applicationsApprovals, totals } = await fetchApplicationsApprovals(formattedToYear);
+            console.log({ applicationsApprovals, totals });
+            if (success) return setApplicationsApprovalsData({ applicationsApprovals, totals });
+            console.error(message);
         }
-    }
+        const loadTeamPerformance = async () => {
+            const { success, message, teamPerformance, totals } = await fetchTeamPerformance(monthYear);
+            if (success) return setTeamPerformanceData({ teams: teamPerformance, totals });
+            console.error(message);
+        }
+        loadApplicationsApprovals();
+        loadTeamPerformance();
+    }, [monthYear]);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -104,37 +48,24 @@ export default function ApplicationApproval() {
                         <PageTitle>Applications & Approvals</PageTitle>
                         <PageSubTitle>Track and manage financing applications and approval rates</PageSubTitle>
                     </div>
-
-                    <button className="btn bg-nissan-red text-white rounded-xl">
-                        <FileDown size={16} /> Export
-                    </button>
-                </div>
-
-                {/* totals */}
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Applications</p>
-                        <h2 className="font-bold">{totals?.applications}</h2>
-                    </div>
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Approved</p>
-                        <h2 className="font-bold">{totals?.approved}</h2>
-                    </div>
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Availed</p>
-                        <h2 className="font-bold">{totals?.availed}</h2>
-                    </div>
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Rate</p>
-                        <h2 className="font-bold text-green-600">{totals?.rate}%</h2>
+                    <div className="flex gap-4">
+                        <button className="btn bg-nissan-red text-white rounded-xl">
+                            <FileDown size={16} /> Export
+                        </button>
+                        <div className="w-50">
+                            <Input
+                                value={monthYear}
+                                type="month"
+                                onChange={(e) => setMonthYear(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Applications & Approvals - Overall Monthly Matrix */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Applications & Approvals - Overall Monthly Matrix</p>
+                        <p className="text-lg font-semibold">Applications & Approvals - Overall Monthly Matrix - {monthYear.substring(0, 4)}</p>
                     </div>
 
                     <div className="table-style">
@@ -142,70 +73,69 @@ export default function ApplicationApproval() {
                             <thead>
                                 <tr>
                                     <td className="rowHeader">ACCOUNT TYPE</td>
-                                    {dates?.map((date, index) => (
-                                        <td key={index}>{date?.name}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((data, index) => (
+                                        <td key={index}>{data?.month}</td>
                                     ))}
                                     <td className="rowFooter">TOTAL</td>
                                 </tr>
                             </thead>
                             <tbody>
-
                                 <tr>
                                     <td className="rowHeader">Applied</td>
 
-                                    {applicationsApprovals?.applied?.map((data, index) => (
-                                        <td key={index} className={data > 0 ? '' : 'text-nissan-gray'}>{data}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((data, index) => (
+                                        <td key={index} className={data?.applications > 0 ? '' : 'text-nissan-gray'}>{data?.applications}</td>
                                     ))}
 
                                     <td className="rowFooter">
-                                        {applicationsApprovals?.applied?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                        {applicationsApprovalsData?.applicationsApprovals?.reduce((sum, num) => sum + num?.applications, 0) ?? 0}
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td className="rowHeader">Approved (As Applied)</td>
 
-                                    {applicationsApprovals?.appliedApproved?.map((data, index) => (
-                                        <td key={index} className={data > 0 ? '' : 'text-nissan-gray'}>{data}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((data, index) => (
+                                        <td key={index} className={data?.appliedApproved > 0 ? '' : 'text-nissan-gray'}>{data?.appliedApproved}</td>
                                     ))}
 
                                     <td className="rowFooter">
-                                        {applicationsApprovals?.appliedApproved?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                        {applicationsApprovalsData?.applicationsApprovals?.reduce((sum, num) => sum + num?.appliedApproved, 0) ?? 0}
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td className="rowHeader">Approved <span className="text-nissan-red">(Not As Applied)</span></td>
 
-                                    {applicationsApprovals?.appliedNotApproved?.map((data, index) => (
-                                        <td key={index} className={data > 0 ? '' : 'text-nissan-gray'}>{data}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((data, index) => (
+                                        <td key={index} className={data?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{data?.appliedNotApproved}</td>
                                     ))}
 
                                     <td className="rowFooter">
-                                        {applicationsApprovals?.appliedNotApproved?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                        {applicationsApprovalsData?.applicationsApprovals?.reduce((sum, num) => sum + num?.appliedNotApproved, 0) ?? 0}
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td className="rowHeader">Availed</td>
 
-                                    {applicationsApprovals?.availed?.map((data, index) => (
-                                        <td key={index} className={data > 0 ? '' : 'text-nissan-gray'}>{data}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((data, index) => (
+                                        <td key={index} className={data?.availed > 0 ? '' : 'text-nissan-gray'}>{data?.availed}</td>
                                     ))}
 
                                     <td className="rowFooter">
-                                        {applicationsApprovals?.availed?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                        {applicationsApprovalsData?.applicationsApprovals?.reduce((sum, num) => sum + num?.availed, 0) ?? 0}
                                     </td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td className="rowHeader">TOTAL</td>
-                                    {applicationsApprovals?.totals?.map((total, index) => (
-                                        <td key={index}>{total}</td>
+                                    {applicationsApprovalsData?.applicationsApprovals?.map((month, index) => (
+                                        <td key={index}>{month?.applications + month?.appliedApproved + month?.appliedNotApproved + month?.availed}</td>
                                     ))}
                                     <td className="rowFooter">
-                                        {applicationsApprovals?.totals?.reduce((sum, num) => sum + num, 0) ?? 0}
+                                        {Object.values(applicationsApprovalsData?.totals ?? {}).reduce((sum, num) => sum + num, 0)}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -216,7 +146,7 @@ export default function ApplicationApproval() {
                 {/* Team Performance */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Team Performance - Dec 2025</p>
+                        <p className="text-lg font-semibold">Team Performance - {monthYear}</p>
                     </div>
 
                     <div className="table-style">
@@ -233,9 +163,9 @@ export default function ApplicationApproval() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {teamPerformance?.teams?.map((team, index) => (
-                                    <tr key={index}>
-                                        <td className="rowHeader">{team?.name}</td>
+                                {teamPerformanceData?.teams?.map(team => (
+                                    <tr key={team?.teamId}>
+                                        <td className="rowHeader">{team?.team}</td>
                                         <td className={team?.applications > 0 ? '' : 'text-nissan-gray'}>{team?.applications}</td>
                                         <td className={team?.appliedApproved > 0 ? '' : 'text-nissan-gray'}>{team?.appliedApproved}</td>
                                         <td className={team?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{team?.appliedNotApproved}</td>
@@ -253,16 +183,16 @@ export default function ApplicationApproval() {
                             <tfoot>
                                 <tr>
                                     <td className="rowHeader">TOTAL</td>
-                                    <td className={teamPerformance?.totals?.applications > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.applications}</td>
-                                    <td className={teamPerformance?.totals?.appliedApproved > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.appliedApproved}</td>
-                                    <td className={teamPerformance?.totals?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.appliedNotApproved}</td>
-                                    <td className={teamPerformance?.totals?.availed > 0 ? '' : 'text-nissan-gray'}>{teamPerformance?.totals?.availed}</td>
+                                    <td className={teamPerformanceData?.totals?.applications > 0 ? '' : 'text-nissan-gray'}>{teamPerformanceData?.totals?.applications}</td>
+                                    <td className={teamPerformanceData?.totals?.appliedApproved > 0 ? '' : 'text-nissan-gray'}>{teamPerformanceData?.totals?.appliedApproved}</td>
+                                    <td className={teamPerformanceData?.totals?.appliedNotApproved > 0 ? '' : 'text-nissan-gray'}>{teamPerformanceData?.totals?.appliedNotApproved}</td>
+                                    <td className={teamPerformanceData?.totals?.availed > 0 ? '' : 'text-nissan-gray'}>{teamPerformanceData?.totals?.availed}</td>
 
-                                    <td className={`font-bold ${getRateColorClass(calculateApprovalRate(teamPerformance?.totals?.applications, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved), APPROVAL_TARGET)}`}>
-                                        {calculateApprovalRate(teamPerformance?.totals?.applications, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved)}%
+                                    <td className={`font-bold ${getRateColorClass(calculateApprovalRate(teamPerformanceData?.totals?.applications, teamPerformanceData?.totals?.appliedApproved, teamPerformanceData?.totals?.appliedNotApproved), APPROVAL_TARGET)}`}>
+                                        {calculateApprovalRate(teamPerformanceData?.totals?.applications, teamPerformanceData?.totals?.appliedApproved, teamPerformanceData?.totals?.appliedNotApproved)}%
                                     </td>
-                                    <td className={`font-bold ${getRateColorClass(calculateAvailmentRate(teamPerformance?.totals?.availed, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved), AVAILMENT_TARGET)}`}>
-                                        {calculateAvailmentRate(teamPerformance?.totals?.availed, teamPerformance?.totals?.appliedApproved, teamPerformance?.totals?.appliedNotApproved)}%
+                                    <td className={`font-bold ${getRateColorClass(calculateAvailmentRate(teamPerformanceData?.totals?.availed, teamPerformanceData?.totals?.appliedApproved, teamPerformanceData?.totals?.appliedNotApproved), AVAILMENT_TARGET)}`}>
+                                        {calculateAvailmentRate(teamPerformanceData?.totals?.availed, teamPerformanceData?.totals?.appliedApproved, teamPerformanceData?.totals?.appliedNotApproved)}%
                                     </td>
                                 </tr>
                             </tfoot>
@@ -274,14 +204,14 @@ export default function ApplicationApproval() {
                     <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                         <p className="text-lg font-semibold">Team Comparison - Approval Rate</p>
                         <div className="h-70">
-                            <ApprovalRate teams={teamPerformance?.teams} />
+                            <ApprovalRate teams={teamPerformanceData?.teams} />
                         </div>
                     </div>
                     <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                         <p className="text-lg font-semibold">Team Comparison - Availment Rate</p>
 
                         <div className="h-70">
-                            <AvailmentRate teams={teamPerformance?.teams} />
+                            <AvailmentRate teams={teamPerformanceData?.teams} />
                         </div>
                     </div>
                 </section>
