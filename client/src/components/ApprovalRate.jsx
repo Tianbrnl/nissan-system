@@ -24,18 +24,18 @@ export default function ApprovalRate({ teams = [] }) {
             ? Math.round((totalApproved / team.applications) * 100)
             : 0;
 
-        return { name: team?.name, approvalRate };
+        return { name: team?.team, approvalRate };
     });
 
     return (
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={teams}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="approvalRate" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={teams}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="approvalRate" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            </BarChart>
+        </ResponsiveContainer>
     );
 }
