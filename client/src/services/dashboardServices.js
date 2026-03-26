@@ -44,3 +44,32 @@ export const reservationByTeam = async () => {
     }
 }
 
+// MONTHLY SOLD TREND
+export const fetchMonthlySoldTrend = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/api/dashboard/monthlySoldTrend`);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to fetch monthly sold trend'
+        };
+    }
+}
+
+
+// APPLICATION SOLD
+export const fetchApplicationSold = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/api/dashboard/applicationSold`);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to fetch application sold'
+        };
+    }
+}
+

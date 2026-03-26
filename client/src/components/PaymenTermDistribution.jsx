@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
     Tooltip,
     ResponsiveContainer,
@@ -5,6 +6,7 @@ import {
     Pie,
     Cell
 } from "recharts";
+import { paymentTermDistribution } from "../services/dashboardServices";
 
 const COLORS = [
     "#3b82f6",
@@ -12,7 +14,23 @@ const COLORS = [
     "#F59E0B"
 ];
 
-export default function PaymentTermDistribution({ paymentTerm }) {
+export default function PaymentTermDistribution() {
+
+    const [paymentTerm, setpaymentTerm] = useState([]);
+
+
+    useEffect(() => {
+        try {
+            const loadPaymentTermDistribution = async () => {
+                const { success, message, paymentTerm: apiPaymentTerm } = await paymentTermDistribution();
+                if (success) return setpaymentTerm(apiPaymentTerm);
+                console.error(message);
+            }
+            loadPaymentTermDistribution();
+        } catch (error) {
+            console.error(error);
+        }
+    },[]);
 
     return (
         <ResponsiveContainer width="100%" height="100%">

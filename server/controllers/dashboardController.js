@@ -1,4 +1,4 @@
-import { fetchDashboardTotalService, paymentTermDistributionService, reservationByTeamService } from "../services/dashboard.js";
+import { applicationSoldService, fetchDashboardTotalService, monthlySoldTrendService, paymentTermDistributionService, reservationByTeamService } from "../services/dashboard.js";
 
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotalController = async (req, res) => {
@@ -41,6 +41,42 @@ export const reservationByTeamController = async (req, res) => {
     try {
 
         const result = await reservationByTeamService();
+
+        return res.json(result);
+
+    } catch (error) {
+        console.error(error);
+
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+// MONTHLY SOLD TREND
+export const monthlySoldTrendController = async (req, res) => {
+    try {
+
+        const result = await monthlySoldTrendService();
+
+        return res.json(result);
+
+    } catch (error) {
+        console.error(error);
+
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+// APPLICATION SOLD
+export const applicationSoldController = async (req, res) => {
+    try {
+
+        const result = await applicationSoldService();
 
         return res.json(result);
 
