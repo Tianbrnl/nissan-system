@@ -4,20 +4,21 @@ const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 // TEAM PERFORMANCE
 export const fetchTeamPerformance = async (monthYear) => {
-    try {
-        const response = await axios.get(`${API_URL}/api/vehicleSales/teamPerformance/${monthYear}`);
-        return response.data;
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: error.response?.data?.message || 'Failed to fetch team performance'
-        };
-    }
+  try {
+    const response = await axios.get(`${API_URL}/api/vehicleSales/teamPerformance/${monthYear}`);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch team performance'
+    };
+  }
 }
 
 // VEHICLE SALES REPORT
 export const fetchVehicleSalesReport = async () => {
+
   try {
     const response = await axios.get(
       `${API_URL}/api/pipeline/reports/vehicle-sales`
@@ -32,6 +33,7 @@ export const fetchVehicleSalesReport = async () => {
     };
   }
 };
+
 // PAYMENT TERM REPORT
 export const fetchPaymentTermReport = async () => {
   try {
@@ -48,6 +50,7 @@ export const fetchPaymentTermReport = async () => {
     };
   }
 };
+
 // RESERVATION BY TEAM REPORT
 export const fetchReservationByTeamReport = async () => {
   try {
@@ -62,6 +65,20 @@ export const fetchReservationByTeamReport = async () => {
       message:
         error.response?.data?.message ||
         "Failed to fetch reservation by team report",
+    };
+  }
+}
+
+// UNIT DESTRIBUTION
+export const fetchUnitDestribution = async (monthYear) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/vehicleSales/unitDestribution/${monthYear}`);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch unit destribution'
     };
   }
 }

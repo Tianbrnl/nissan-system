@@ -37,8 +37,31 @@ export default function VehicleSales() {
     useEffect(() => {
         try {
             const load = async () => {
+                setTotals({
+                    totalUnitSold: 0,
+                    topTeam: {
+                        team: '',
+                        units: 0
+                    },
+                    topUnit: {
+                        unit: '',
+                        total: 0
+                    },
+                });
+
+                setData([]);
+                setUnitTotals([]);
+
+                setGraphTotalUnits([]);
+                setUnitContributionPerTeam([]);
+
                 const { success, message, teamPerformance, unitTotals } = await fetchTeamPerformance(monthYear);
                 if (success) {
+
+                    if (unitTotals.length === 0) {
+                        return
+                    }
+
                     setData(teamPerformance);
                     setUnitTotals(unitTotals);
 
@@ -167,7 +190,7 @@ export default function VehicleSales() {
                         <p className="text-lg font-semibold">Unit Destribution</p>
 
                         <div className="h-70">
-                            <UnitDistribution />
+                            <UnitDistribution monthYear={monthYear} />
                         </div>
                     </div>
                 </section>

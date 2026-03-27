@@ -28,23 +28,31 @@ export default function ModelContributionPerTeam({ teams = [] }) {
     const unitKeys = teams[0]?.units.map(unit => unit.name);
 
     return (
-        <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                {/* <Legend /> */}
+        <>
+            {formattedData.length > 0 ?
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={formattedData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        {/* <Legend /> */}
 
-                {unitKeys?.map((unit, index) => (
-                    <Bar
-                        key={unit}
-                        dataKey={unit}
-                        stackId="a"   // remove this if you want grouped bars
-                        fill={`hsl(${index * 40}, 70%, 50%)`}
-                    />
-                ))}
-            </BarChart>
-        </ResponsiveContainer>
+                        {unitKeys?.map((unit, index) => (
+                            <Bar
+                                key={unit}
+                                dataKey={unit}
+                                stackId="a"   // remove this if you want grouped bars
+                                fill={`hsl(${index * 40}, 70%, 50%)`}
+                            />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+                :
+                < div className="text-center p-4" >
+                    <h3>NO DATA</h3>
+                </div >
+            }
+        </>
     );
 }
