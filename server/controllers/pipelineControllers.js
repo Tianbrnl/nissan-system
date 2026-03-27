@@ -80,6 +80,7 @@ export const readAllPipelineController = async (req, res) => {
         const {
             page,
             limit,
+            exportAll,
             month,
             search,
             status,
@@ -89,6 +90,7 @@ export const readAllPipelineController = async (req, res) => {
         const result = await readAllPipelineService({
             page: Number.parseInt(page, 10),
             limit: Number.parseInt(limit, 10),
+            exportAll: exportAll === "true",
             month,
             search,
             status,

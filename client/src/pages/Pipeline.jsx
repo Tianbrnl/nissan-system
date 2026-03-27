@@ -3,6 +3,7 @@ import { FileDown, Pen, Plus, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import Input from "../components/ui/Input";
 import Select from "../components/ui/Select";
 import CreatePipeline from "../components/Pipeline/CreatePipeline";
@@ -12,6 +13,7 @@ import DeletePipeline from "../components/Pipeline/DeletePipeline";
 import { readAllGrm } from "../services/teamServices";
 import { selectReadAllVariant } from "../services/variantServices";
 import {getCurrentMonthYear} from "../utils/tools";
+import { exportToWord } from "../utils/ExportToWord";
 
 
 const normalizeMonthValue = (value) => {
@@ -21,6 +23,19 @@ const normalizeMonthValue = (value) => {
 
     const trimmedValue = value.trim();
     return /^\d{4}-\d{2}$/.test(trimmedValue) ? trimmedValue : "";
+};
+
+const formatExportValue = (value) => value || "-";
+
+const buildExportSubtitle = ({ selectedMonth, search, status, grm, model }) => {
+    const parts = [`Month: ${selectedMonth || "All"}`];
+
+    if (search) parts.push(`Search: ${search}`);
+    if (status && status !== "All Statuses") parts.push(`Status: ${status}`);
+    if (grm && grm !== "All GRMs") parts.push(`GRM: ${grm}`);
+    if (model && model !== "All Models") parts.push(`Model: ${model}`);
+
+    return parts.join(" | ");
 };
 
 export default function Pipeline() {
@@ -213,6 +228,74 @@ export default function Pipeline() {
         setSelectedMonth(normalizeMonthValue(event.target.value) || getCurrentMonthYear());
     };
 
+    const handleExport = async () => {
+        const { success, message, data: exportRows = [] } = await readAllPipeline({
+            page: 1,
+            limit: PAGE_SIZE,
+            exportAll: true,
+            month: selectedMonth,
+            search: appliedFilters.search,
+            status: appliedFilters.status,
+            grm: appliedFilters.grm,
+            model: appliedFilters.model,
+        });
+
+        if (!success) {
+            console.error(message);
+            toast.error(message || "Failed to export pipeline data.");
+            return;
+        }
+
+        if (exportRows.length === 0) {
+            toast.error("No pipeline data found for the selected filters.");
+            return;
+        }
+
+        const headers = [
+            "TARGET RELEASE",
+            "VARIANT",
+            "UNIT",
+            "COLOR",
+            "CS NUMBER",
+            "TRANSACTION",
+            "BANK",
+            "CLIENT",
+            "GRM",
+            "STATUS",
+            "REMARKS",
+            "MONTH START",
+        ];
+
+        const rows = exportRows.map((sale) => ([
+            formatExportValue(sale?.targetReleased),
+            formatExportValue(sale?.unit?.variant?.name),
+            formatExportValue(sale?.unit?.name),
+            formatExportValue(sale?.color),
+            formatExportValue(sale?.csNumber),
+            formatExportValue(sale?.transaction),
+            formatExportValue(sale?.bank),
+            formatExportValue(sale?.client),
+            formatExportValue(sale?.team?.teamLeader),
+            formatExportValue(sale?.status),
+            formatExportValue(sale?.remarks),
+            formatExportValue(sale?.monthStart),
+        ]));
+
+        await exportToWord({
+            title: "Pipeline Report",
+            subtitle: buildExportSubtitle({
+                selectedMonth,
+                search: appliedFilters.search,
+                status: appliedFilters.status,
+                grm: appliedFilters.grm,
+                model: appliedFilters.model,
+            }),
+            headers,
+            rows,
+            fileName: `Pipeline_Report_${selectedMonth || "all"}`
+        });
+    };
+
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -225,7 +308,7 @@ export default function Pipeline() {
                         <PageSubTitle>Operation transaction tracking management</PageSubTitle>
                     </div>
                     <div className="flex gap-4">
-                        <button className="btn bg-nissan-red text-white rounded-xl">
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport} disabled={isLoading}>
                             <FileDown size={16} /> Export
                         </button>
                         <button
