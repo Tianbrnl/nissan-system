@@ -188,10 +188,11 @@ export const readOnePipelineService = async (pipelineId) => {
 }
 
 // READ ALL PIPELINE
-export const readAllPipelineService = async ({ page, limit, month, search, status, grm, model } = {}) => {
+export const readAllPipelineService = async ({ page, limit, exportAll = false, month, search, status, grm, model } = {}) => {
     try {
         const currentPage = parsePositiveInt(page, DEFAULT_PAGE);
         const pageSize = parsePositiveInt(limit, DEFAULT_LIMIT);
+        const shouldExportAll = exportAll === true;
         const monthDateRange = getMonthDateRange(month);
         const normalizedSearch = normalizeFilterValue(search);
         const normalizedStatus = normalizeFilterValue(status);
@@ -251,7 +252,7 @@ export const readAllPipelineService = async ({ page, limit, month, search, statu
         }
 
         const offset = (currentPage - 1) * pageSize;
-        const { count, rows } = await Pipelines.findAndCountAll({
+        const queryOptions = {
             attributes: [
                 'id',
                 'targetReleased',
@@ -282,14 +283,21 @@ export const readAllPipelineService = async ({ page, limit, month, search, statu
             ],
             where,
             order: [['targetReleased', 'DESC'], ['id', 'DESC']],
-            offset,
-            limit: pageSize,
             distinct: true,
             subQuery: false
-        });
+        };
+
+        if (!shouldExportAll) {
+            queryOptions.offset = offset;
+            queryOptions.limit = pageSize;
+        }
+
+        const { count, rows } = await Pipelines.findAndCountAll(queryOptions);
 
         const totalItems = count;
-        const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize);
+        const totalPages = shouldExportAll
+            ? (totalItems === 0 ? 0 : 1)
+            : (totalItems === 0 ? 0 : Math.ceil(totalItems / pageSize));
 
         return {
             success: true,
@@ -297,8 +305,8 @@ export const readAllPipelineService = async ({ page, limit, month, search, statu
             pagination: {
                 totalItems,
                 totalPages,
-                currentPage,
-                pageSize
+                currentPage: shouldExportAll ? 1 : currentPage,
+                pageSize: shouldExportAll ? totalItems : pageSize
             }
         };
 

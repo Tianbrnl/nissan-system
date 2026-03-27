@@ -34,6 +34,7 @@ export const readOnePipeline = async (pipelineId) => {
 export const readAllPipeline = async ({
     page = 1,
     limit = 10,
+    exportAll = false,
     month,
     search = '',
     status = '',
@@ -45,6 +46,7 @@ export const readAllPipeline = async ({
             params: {
                 page,
                 limit,
+                ...(exportAll ? { exportAll: true } : {}),
                 ...(month ? { month } : {}),
                 ...(search ? { search } : {}),
                 ...(status ? { status } : {}),
