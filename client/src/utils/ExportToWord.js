@@ -12,74 +12,288 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
-export const exportToWord = async (config) => {
-  const { title, subtitle, headers, rows, fileName } = config;
+const toSafeNumber = (value) => Number(value) || 0;
 
-  // Create header rows
-  const headerCells = headers.map(
-    (header) =>
-      new TableCell({
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: header,
-                bold: true,
-                color: "1C1C1C",
-              }),
-            ],
-            alignment: AlignmentType.CENTER,
-          }),
-        ],
-        shading: {
-          fill: "F5F6F8",
-        },
-        borders: {
-          top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-          bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-          left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-          right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        },
-      }),
+const sumValues = (values = []) =>
+  values.reduce((sum, value) => sum + toSafeNumber(value), 0);
+
+const mapItems = (items = [], mapper) => items.map((item, index) => mapper(item, index));
+
+const getApplicationsApprovalEntries = (data) => data?.applicationsApprovals ?? [];
+
+const getTeamPerformanceEntries = (data) => data?.teams ?? [];
+
+const buildDataRow = (label, entries = [], valueSelector) => {
+  const rowValues = mapItems(entries, (entry) => valueSelector(entry));
+  return [label, ...rowValues, sumValues(rowValues)];
+};
+
+const buildMonthlyTotalValues = (entries = [], valueSelectors = []) =>
+  mapItems(entries, (entry) =>
+    sumValues(mapItems(valueSelectors, (selector) => selector(entry))),
   );
 
-  // Create data rows
-  const dataRows = rows.map(
-    (row) =>
-      new TableRow({
-        children: row.map(
-          (cell) =>
-            new TableCell({
+const formatPercentage = (value) => `${toSafeNumber(value)}%`;
+
+const getApplicationsApprovalGrandTotal = (data, monthlyTotals = []) =>
+  sumValues(
+    Object.keys(data?.totals ?? {}).length > 0
+      ? Object.values(data?.totals ?? {})
+      : monthlyTotals,
+  );
+// application & approval export 
+export const createApplicationsApprovalMatrixExport = (data, monthYear) => {
+  const entries = getApplicationsApprovalEntries(data);
+  const reportYear = monthYear?.substring?.(0, 4) ?? "";
+  const metricConfigs = [
+    { label: "Applied", selector: (entry) => entry?.applications ?? 0 },
+    {
+      label: "Approved (As Applied)",
+      selector: (entry) => entry?.appliedApproved ?? 0,
+    },
+    {
+      label: "Approved (Not As Applied)",
+      selector: (entry) => entry?.appliedNotApproved ?? 0,
+    },
+    { label: "Availed", selector: (entry) => entry?.availed ?? 0 },
+  ];
+
+  const monthlyTotals = buildMonthlyTotalValues(
+    entries,
+    mapItems(metricConfigs, (config) => config.selector),
+  );
+
+  return {
+    title: `Applications & Approvals - Overall Monthly Matrix - ${reportYear}`,
+    headers: [
+      "ACCOUNT TYPE",
+      ...mapItems(entries, (entry) => entry?.month ?? "-"),
+      "TOTAL",
+    ],
+    rows: [
+      ...mapItems(metricConfigs, (config) =>
+        buildDataRow(config.label, entries, config.selector),
+      ),
+      [
+        "TOTAL",
+        ...monthlyTotals,
+        getApplicationsApprovalGrandTotal(data, monthlyTotals),
+      ],
+    ],
+  };
+};
+
+const buildMonthlyReportRows = (entries = [], valueSelector, labelSelector) => [
+  ...mapItems(entries, (entry) => {
+    const monthlyValues = valueSelector(entry);
+    return [
+      labelSelector(entry),
+      ...monthlyValues,
+      sumValues(monthlyValues),
+    ];
+  }),
+];
+
+const buildMonthlyReportTotalRow = (totals = []) => [
+  "TOTAL",
+  ...totals,
+  sumValues(totals),
+];
+
+export const createVehicleSalesByUnitsExport = (data, year) => {
+  const vehicles = data?.vehicles ?? [];
+  const totals = data?.totals ?? [];
+
+  return {
+    title: `Vehicle Sales by Units (Monthly) - ${year ?? ""}`,
+    headers: ["UNITS", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL"],
+    rows: [
+      ...buildMonthlyReportRows(
+        vehicles,
+        (vehicle) => vehicle?.data ?? [],
+        (vehicle) => vehicle?.name ?? "-",
+      ),
+      buildMonthlyReportTotalRow(totals),
+    ],
+  };
+};
+
+export const createPaymentTermMonthlyExport = (data, year) => {
+  const paymentEntries = data?.payment ?? [];
+  const totals = data?.totals ?? [];
+
+  return {
+    title: `Payment Term (Monthly) - ${year ?? ""}`,
+    headers: ["PAYMENT TERM", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL"],
+    rows: [
+      ...buildMonthlyReportRows(
+        paymentEntries,
+        (payment) => payment?.data ?? [],
+        (payment) => payment?.name ?? "-",
+      ),
+      buildMonthlyReportTotalRow(totals),
+    ],
+  };
+};
+
+export const createReservationByTeamMonthlyExport = (data, year) => {
+  const teams = data?.teams ?? [];
+  const totals = data?.totals ?? [];
+
+  return {
+    title: `Reservation by Team (Monthly) - ${year ?? ""}`,
+    headers: ["TEAM", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL"],
+    rows: [
+      ...buildMonthlyReportRows(
+        teams,
+        (team) => team?.data ?? [],
+        (team) => team?.name ?? "-",
+      ),
+      buildMonthlyReportTotalRow(totals),
+    ],
+  };
+};
+
+export const createTeamPerformanceExport = (
+  data,
+  monthYear,
+  calculateApprovalRate,
+  calculateAvailmentRate,
+) => {
+  const entries = getTeamPerformanceEntries(data);
+  const totals = data?.totals ?? {};
+
+  const mapTeamRow = (team) => [
+    team?.team ?? "-",
+    team?.applications ?? 0,
+    team?.appliedApproved ?? 0,
+    team?.appliedNotApproved ?? 0,
+    team?.availed ?? 0,
+    formatPercentage(
+      calculateApprovalRate?.(
+        team?.applications,
+        team?.appliedApproved,
+        team?.appliedNotApproved,
+      ) ?? 0,
+    ),
+    formatPercentage(
+      calculateAvailmentRate?.(
+        team?.availed,
+        team?.appliedApproved,
+        team?.appliedNotApproved,
+      ) ?? 0,
+    ),
+  ];
+
+  return {
+    title: `Team Performance - ${monthYear ?? ""}`,
+    headers: [
+      "TEAM",
+      "APPLICATIONS",
+      "APPROVED (AS APPLIED)",
+      "APPROVED (NOT AS APPLIED)",
+      "AVAILED",
+      "APPROVAL RATE",
+      "AVAILMENT RATE",
+    ],
+    rows: [
+      ...mapItems(entries, mapTeamRow),
+      [
+        "TOTAL",
+        totals?.applications ?? 0,
+        totals?.appliedApproved ?? 0,
+        totals?.appliedNotApproved ?? 0,
+        totals?.availed ?? 0,
+        formatPercentage(
+          calculateApprovalRate?.(
+            totals?.applications,
+            totals?.appliedApproved,
+            totals?.appliedNotApproved,
+          ) ?? 0,
+        ),
+        formatPercentage(
+          calculateAvailmentRate?.(
+            totals?.availed,
+            totals?.appliedApproved,
+            totals?.appliedNotApproved,
+          ) ?? 0,
+        ),
+      ],
+    ],
+  };
+};
+
+export const exportToWord = async (config) => {
+  const { title, subtitle, headers, rows, fileName, tables } = config;
+
+  const buildTable = (tableHeaders, tableRows) => {
+    const headerCells = tableHeaders.map(
+      (header) =>
+        new TableCell({
+          children: [
+            new Paragraph({
               children: [
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: String(cell),
-                      color: "333333",
-                    }),
-                  ],
-                  alignment: AlignmentType.CENTER,
+                new TextRun({
+                  text: header,
+                  bold: true,
+                  color: "1C1C1C",
                 }),
               ],
-              borders: {
-                top: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                bottom: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                left: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-                right: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
-              },
+              alignment: AlignmentType.CENTER,
             }),
-        ),
-      }),
-  );
+          ],
+          shading: {
+            fill: "F5F6F8",
+          },
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+            right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          },
+        }),
+    );
 
-  // Create table
-  const table = new Table({
-    width: {
-      size: 100,
-      type: WidthType.PERCENTAGE,
-    },
-    rows: [new TableRow({ children: headerCells }), ...dataRows],
-  });
+    const dataRows = tableRows.map(
+      (row) =>
+        new TableRow({
+          children: row.map(
+            (cell) =>
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: String(cell),
+                        color: "333333",
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+                borders: {
+                  top: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                  bottom: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                  left: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                  right: { style: BorderStyle.SINGLE, size: 1, color: "EEEEEE" },
+                },
+              }),
+          ),
+        }),
+    );
+
+    return new Table({
+      width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+      },
+      rows: [new TableRow({ children: headerCells }), ...dataRows],
+    });
+  };
+
+  const documentTables = tables?.length
+    ? tables
+    : [{ title: null, headers, rows }];
 
   // Create document sections
   const sections = [
@@ -117,8 +331,28 @@ export const exportToWord = async (config) => {
     );
   }
 
-  // Add table
-  sections.push(table);
+  documentTables.forEach((tableConfig, index) => {
+    if (tableConfig?.title) {
+      sections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: tableConfig.title,
+              bold: true,
+              size: 26,
+              color: "1C1C1C",
+            }),
+          ],
+          spacing: {
+            before: index === 0 ? 0 : 300,
+            after: 200,
+          },
+        }),
+      );
+    }
+
+    sections.push(buildTable(tableConfig.headers ?? [], tableConfig.rows ?? []));
+  });
 
   // Add footer
   sections.push(
