@@ -6,7 +6,12 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CreateVariant from "../components/VehicleReports/CreateVariant";
 import UpdateUnit from "../components/VehicleReports/UpdateUnit";
 import UpdateVariant from "../components/VehicleReports/UpdateVariant";
-import { exportToWord } from "../utils/ExportToWord";
+import {
+    createPaymentTermMonthlyExport,
+    createReservationByTeamMonthlyExport,
+    createVehicleSalesByUnitsExport,
+    exportToWord
+} from "../utils/ExportToWord";
 import {
     fetchVehicleSalesReport,
     fetchPaymentTermReport,
@@ -208,24 +213,14 @@ export default function VehicleReports() {
     };
 
     const handleExportAll = async () => {
-        // This is for the main export button - exports all three reports
-        const headers = ["UNITS", ...months, "TOTAL"];
-        const rows = vehicleSales.vehicles.map(vehicle => [
-            vehicle.name,
-            ...vehicle.data,
-            vehicle.data.reduce((sum, value) => sum + value, 0)
-        ]);
-        rows.push([
-            "TOTAL",
-            ...vehicleSales.totals,
-            vehicleSales.totals.reduce((sum, value) => sum + value, 0)
-        ]);
+        const vehicleSalesTable = createVehicleSalesByUnitsExport(vehicleSales, year);
+        const paymentTermTable = createPaymentTermMonthlyExport(paymentTerm, year);
+        const reservationByTeamTable = createReservationByTeamMonthlyExport(reservationByTeam, year);
 
         await exportToWord({
-            title: `${year} Vehicle & Reservation Reports`,
+            title: `${year} Vehicle Reports`,
             subtitle: "Complete monthly breakdown",
-            headers,
-            rows,
+            tables: [vehicleSalesTable, paymentTermTable, reservationByTeamTable],
             fileName: `Vehicle_Reports_${year}`
         });
     };
@@ -317,9 +312,7 @@ export default function VehicleReports() {
                             >
                                 <Pen size={16} />
                             </button>
-                            <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportVehicleSales}>
-                                <FileDown size={16} /> Export
-                            </button>
+                            
                         </div>
                     </div>
 
@@ -398,9 +391,7 @@ export default function VehicleReports() {
                         <p className="text-lg font-semibold">Payment Term (Monthly) - {year}</p>
 
 
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportPaymentTerms}>
-                            <FileDown size={16} /> Export
-                        </button>
+                        
 
                     </div>
                     <div className="table-style">
@@ -444,9 +435,7 @@ export default function VehicleReports() {
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
                         <p className="text-lg font-semibold">Reservation by Team (Monthly) - {year}</p>
 
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportReservations}>
-                            <FileDown size={16} /> Export
-                        </button>
+                        
                     </div>
 
                     <div className="table-style">

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { getCurrentMonthYear } from "../utils/tools";
 import Input from "../components/ui/Input";
 import { calculateApprovalRate, calculateAvailmentRate, getRateColorClass } from "../utils/calculation";
+import { createApplicationsApprovalMatrixExport, createTeamPerformanceExport, exportToWord } from "../utils/ExportToWord";
 
 export default function ApplicationApproval() {
 
@@ -37,6 +38,23 @@ export default function ApplicationApproval() {
         loadTeamPerformance();
     }, [monthYear]);
 
+    const handleExport = async () => {
+        const matrixTable = createApplicationsApprovalMatrixExport(applicationsApprovalsData, monthYear);
+        const teamPerformanceTable = createTeamPerformanceExport(
+            teamPerformanceData,
+            monthYear,
+            calculateApprovalRate,
+            calculateAvailmentRate
+        );
+
+        await exportToWord({
+            title: "Applications & Approvals Report",
+            subtitle: `Overall monthly matrix for ${monthYear.substring(0, 4)} and team performance for ${monthYear}`,
+            tables: [matrixTable, teamPerformanceTable],
+            fileName: `Applications_Approvals_Report_${monthYear}`
+        });
+    };
+
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -49,7 +67,7 @@ export default function ApplicationApproval() {
                         <PageSubTitle>Track and manage financing applications and approval rates</PageSubTitle>
                     </div>
                     <div className="flex gap-4">
-                        <button className="btn bg-nissan-red text-white rounded-xl">
+                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport}>
                             <FileDown size={16} /> Export
                         </button>
                         <div className="w-50">
