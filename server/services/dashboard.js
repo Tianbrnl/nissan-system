@@ -1,5 +1,5 @@
 import { Pipelines, Teams } from "../models/index.js";
-import { Op, fn, col, literal } from "sequelize";
+import { Op, fn, col, literal, Sequelize } from "sequelize";
 
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotalService = async () => {
@@ -145,6 +145,143 @@ export const reservationByTeamService = async () => {
         return {
             success: true,
             teams
+        };
+
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+};
+
+// MONTHLY SOLD TREND
+export const monthlySoldTrendService = async () => {
+    try {
+
+        const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
+
+        const results = await Pipelines.findAll({
+            attributes: [
+                [Sequelize.fn("YEAR", Sequelize.col("monthStart")), "year"],
+                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "month"],
+                [
+                    Sequelize.fn(
+                        "SUM",
+                        Sequelize.literal(`CASE WHEN status = 'Sold' THEN 1 ELSE 0 END`)
+                    ),
+                    "sold"
+                ]
+            ],
+            where: Sequelize.where(
+                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
+                { [Op.in]: [previousYear, currentYear] }
+            ),
+            group: [
+                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
+                Sequelize.fn("MONTH", Sequelize.col("monthStart"))
+            ],
+            order: [
+                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "ASC"]
+            ],
+            raw: true
+        });
+
+        const months = [
+            "JAN","FEB","MAR","APR","MAY","JUN",
+            "JUL","AUG","SEP","OCT","NOV","DEC"
+        ];
+
+        const monthlySoldTrend = months.map(month => ({
+            month,
+            lastYear: 0,
+            thisYear: 0
+        }));
+
+        results.forEach(row => {
+            const monthIndex = Number(row.month) - 1;
+
+            if (Number(row.year) === currentYear) {
+                monthlySoldTrend[monthIndex].thisYear = Number(row.sold) || 0;
+            } else if (Number(row.year) === previousYear) {
+                monthlySoldTrend[monthIndex].lastYear = Number(row.sold) || 0;
+            }
+        });
+
+        return {
+            success: true,
+            monthlySoldTrend
+        };
+
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+};
+
+// APPLICATION SOLD
+export const applicationSoldService = async () => {
+    try {
+
+        const currentYear = new Date().getFullYear();
+
+        const results = await Pipelines.findAll({
+            attributes: [
+                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "month"],
+                [
+                    Sequelize.fn(
+                        "SUM",
+                        Sequelize.literal(`CASE WHEN status = 'Sold' THEN 1 ELSE 0 END`)
+                    ),
+                    "sold"
+                ],
+                [
+                    Sequelize.fn(
+                        "SUM",
+                        Sequelize.literal(`CASE WHEN appliedAt IS NOT NULL THEN 1 ELSE 0 END`)
+                    ),
+                    "applications"
+                ]
+            ],
+            where: Sequelize.where(
+                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
+                currentYear
+            ),
+            group: [Sequelize.fn("MONTH", Sequelize.col("monthStart"))],
+            order: [[Sequelize.fn("MONTH", Sequelize.col("monthStart")), "ASC"]],
+            raw: true
+        });
+
+        const months = [
+            "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+        ];
+
+        // default months (ensures JAN–DEC always exist)
+        const applicationSold = months.map((month) => ({
+            month,
+            applications: 0,
+            sold: 0
+        }));
+
+        results.forEach(row => {
+            const monthIndex = Number(row.month) - 1;
+
+            applicationSold[monthIndex] = {
+                month: months[monthIndex],
+                applications: Number(row.applications) || 0,
+                sold: Number(row.sold) || 0
+            };
+        });
+
+        return {
+            success: true,
+            applicationSold
         };
 
     } catch (error) {

@@ -1,29 +1,29 @@
 import { useEffect, useState } from "react";
 import {
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Line,
-    LineChart,
     Legend
 } from "recharts";
-import { fetchMonthlySoldTrend } from "../services/dashboardServices";
+import { fetchApplicationSold } from "../services/dashboardServices";
 
-export default function MonthlySalesTrend() {
+export default function ApplicationSold() {
 
-    const [monthlySoldTrend, setMonthlySoldTrend] = useState([]);
+    const [applicationSold, setApplicationSold] = useState([]);
 
     useEffect(() => {
         try {
             try {
-                const loadMonthlySoldTrend = async () => {
-                    const { success, message, monthlySoldTrend: apiMonthlySoldTrend } = await fetchMonthlySoldTrend();
-                    if (success) return setMonthlySoldTrend(apiMonthlySoldTrend);
+                const loadApplicationSold = async () => {
+                    const { success, message, applicationSold: apiApplicationSold } = await fetchApplicationSold();
+                    if (success) return setApplicationSold(apiApplicationSold);
                     console.error(message);
                 }
-                loadMonthlySoldTrend();
+                loadApplicationSold();
             } catch (error) {
                 console.error(error);
             }
@@ -33,29 +33,26 @@ export default function MonthlySalesTrend() {
 
     }, []);
 
+
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlySoldTrend}>
+            <BarChart data={applicationSold}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line
-                    type="monotone"
-                    dataKey="thisYear"
-                    name="2025"
+                <Bar
+                    dataKey="applications"
                     fill="#94A3B8"
                     radius={[8, 8, 0, 0]}
                 />
-                <Line
-                    type="monotone"
-                    dataKey="lastYear"
-                    name="2026"
+                <Bar
+                    dataKey="sold"
                     fill="#3b82f6"
                     radius={[8, 8, 0, 0]}
                 />
-            </LineChart>
+            </BarChart>
         </ResponsiveContainer>
     );
 }

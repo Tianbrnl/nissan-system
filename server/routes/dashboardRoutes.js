@@ -1,5 +1,5 @@
 import express from 'express';
-import { fetchDashboardTotalController, paymentTermDistributionCOntroller, reservationByTeamController } from '../controllers/dashboardController.js';
+import { applicationSoldController, fetchDashboardTotalController, monthlySoldTrendController, paymentTermDistributionCOntroller, reservationByTeamController } from '../controllers/dashboardController.js';
 
 const dashboardRouter = express.Router();
 
@@ -11,6 +11,12 @@ dashboardRouter.get('/paymentTermDistribution', paymentTermDistributionCOntrolle
 
 // RESERVATION BY TEAM
 dashboardRouter.get('/reservationByTeam', reservationByTeamController);
+
+// MONTHLY SOLD TREND
+dashboardRouter.get('/monthlySoldTrend', monthlySoldTrendController);
+
+// APPLICATION SOLD
+dashboardRouter.get('/applicationSold', applicationSoldController);
 
 
 export default dashboardRouter;

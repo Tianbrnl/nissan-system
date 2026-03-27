@@ -1,62 +1,52 @@
-import {
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell
-} from "recharts";
+import { useEffect, useState } from "react";
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { fetchUnitDestribution } from "../services/vehicleSales";
 
-const models = [
-    { name: 'E26', data: 12 },
-    { name: 'Kicks', data: 18 },
-    { name: 'Prem', data: 7 },
-    { name: 'NissanZ', data: 7 },
-    { name: 'Livina', data: 9 },
-    { name: 'Terra', data: 11 },
-    { name: 'D23', data: 15 },
-    { name: 'Patrol', data: 8 },
-    { name: 'N18', data: 12 }
-];
+export default function UnitDistribution({ monthYear = '' }) {
+    const [data, setData] = useState([]);
 
-const COLORS = [
-    "#3b82f6",
-    "#10B981",
-    "#F59E0B",
-    "#3b82f6",
-    "#10B981",
-    "#F59E0B",
-    "#3b82f6",
-    "#10B981",
-    "#F59E0B"
-];
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A', '#33AA99'];
 
-export default function UnitDistribution() {
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const { success, message, data: apiData } = await fetchUnitDestribution(monthYear);
+                if (success) setData(apiData);
+                else console.error(message);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        load();
+    }, [monthYear]);
 
     return (
-        <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-                <Tooltip formatter={(value) => `${value}%`} />
-
-                <Pie
-                    data={models}
-                    dataKey="data"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, percent }) =>
-                        `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                    labelLine={false}
-                >
-                    {models.map((entry, index) => (
-                        <Cell
-                            key={index}
-                            fill={COLORS[index % COLORS.length]}
-                        />
-                    ))}
-                </Pie>
-            </PieChart>
-        </ResponsiveContainer>
+        <div style={{ width: '100%', height: 300 }}>
+            {data.length > 0 ?
+                <ResponsiveContainer>
+                    <PieChart>
+                        <Tooltip formatter={(value) => `${value}%`} />
+                        <Pie
+                            data={data}
+                            dataKey="count"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            labelLine={false}
+                        >
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+                :
+                <div className="text-center p-4">
+                    <h3>NO DATA</h3>
+                </div>
+            }
+        </div>
     );
 }
