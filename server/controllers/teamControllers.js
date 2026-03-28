@@ -1,13 +1,30 @@
-import { createTeamService, deleteTeamService, readAllGrmService, readAllTeamService, readOneTeamService, updateTeamService } from "../services/teamServices.js";
+import { createTeamService, deleteTeamService, readAllGrmService, readAllTeamService, readOneTeamService, readTeamMembersService, updateTeamService } from "../services/teamServices.js";
 
 // CREATE TEAM 
 export const createTeamController = async (req, res) => {
     try {
-        const { teamCode, teamLeader } = req.body;
-        const result = await createTeamService(teamCode, teamLeader);
+        const { teamCode, teamLeader, members } = req.body;
+        const result = await createTeamService(teamCode, teamLeader, members);
 
         return res.json(result);
 
+    } catch (error) {
+        console.error(error);
+
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+// READ TEAM MEMBERS
+export const readTeamMembersController = async (req, res) => {
+    try {
+        const { teamId } = req.params;
+        const result = await readTeamMembersService(teamId);
+
+        return res.json(result);
     } catch (error) {
         console.error(error);
 
@@ -74,8 +91,8 @@ export const readAllGrmController = async (req, res) => {
 export const updateTeamController = async (req, res) => {
     try {
         const { teamId } = req.params;
-        const { teamCode, teamLeader } = req.body;
-        const result = await updateTeamService(teamId, teamCode, teamLeader);
+        const { teamCode, teamLeader, members } = req.body;
+        const result = await updateTeamService(teamId, teamCode, teamLeader, members);
 
         return res.json(result);
 

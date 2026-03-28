@@ -3,14 +3,50 @@ import { createTeam } from "../../services/teamServices";
 import Input from "../ui/Input"
 import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../ui/ui-modal"
 import { toast } from "react-toastify"
+import MemberFields from "./MemberFields";
 
 export default function CreateTeam({ onClose = () => { }, runAfter = () => { } }) {
 
     const { formData, handleInputChange } = useForm({
         teamCode: '',
-        teamLeader: ''
+        teamLeader: '',
+        members: [{ memberName: '' }]
     });
 
+    const handleMemberChange = (index, value) => {
+        const nextMembers = [...formData.members];
+        nextMembers[index] = {
+            ...nextMembers[index],
+            memberName: value
+        };
+
+        handleInputChange({
+            target: {
+                name: "members",
+                value: nextMembers
+            }
+        });
+    };
+// add member
+    const handleAddMember = () => {
+        handleInputChange({
+            target: {
+                name: "members",
+                value: [...formData.members, { memberName: '' }]
+            }
+        });
+    };
+// remove member
+    const handleRemoveMember = (index) => {
+        const nextMembers = formData.members.filter((_, memberIndex) => memberIndex !== index);
+
+        handleInputChange({
+            target: {
+                name: "members",
+                value: nextMembers.length > 0 ? nextMembers : [{ memberName: '' }]
+            }
+        });
+    };
 
     const handleSubmit = async () => {
         const { success, message } = await createTeam(formData);
@@ -46,6 +82,13 @@ export default function CreateTeam({ onClose = () => { }, runAfter = () => { } }
                         required={true}
                         value={formData?.teamLeader}
                         onChange={handleInputChange}
+                    />
+
+                    <MemberFields
+                        members={formData.members}
+                        onAdd={handleAddMember}
+                        onRemove={handleRemoveMember}
+                        onChange={handleMemberChange}
                     />
 
                     <ModalFooter
