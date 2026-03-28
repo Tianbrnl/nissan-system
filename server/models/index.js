@@ -1,4 +1,5 @@
 import Teams from "./Team.js";
+import TeamMembers from "./TeamMember.js";
 import Pipelines from "./Pipeline.js";
 import Variants from "./Variant.js";
 import Units from "./Unit.js";
@@ -31,4 +32,26 @@ Pipelines.belongsTo(Teams, {
     foreignKey: "teamId",
 });
 
-export { Teams, Pipelines, Units, Variants, ReleasePlanCommitments };
+Teams.hasMany(TeamMembers, {
+    foreignKey: "teamId",
+    as: "members",
+    onDelete: "CASCADE",
+});
+
+TeamMembers.belongsTo(Teams, {
+    foreignKey: "teamId",
+    as: "team",
+});
+
+TeamMembers.hasMany(Pipelines, {
+    foreignKey: "memberId",
+    as: "pipelines",
+    onDelete: "SET NULL",
+});
+
+Pipelines.belongsTo(TeamMembers, {
+    foreignKey: "memberId",
+    as: "member",
+});
+
+export { Teams, TeamMembers, Pipelines, Units, Variants, ReleasePlanCommitments };

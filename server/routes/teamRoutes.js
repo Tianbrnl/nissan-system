@@ -1,5 +1,5 @@
 import express from 'express'; 
-import { createTeamController, deleteTeamController, readAllGrmController, readAllTeamController, readOneTeamController, updateTeamController } from '../controllers/teamControllers.js';
+import { createTeamController, deleteTeamController, readAllGrmController, readAllTeamController, readOneTeamController, readTeamMembersController, updateTeamController } from '../controllers/teamControllers.js';
 
 const teamRouter = express.Router();
 
@@ -14,6 +14,9 @@ teamRouter.get('/readAll', readAllTeamController);
 
 // READ ALL GRM 
 teamRouter.get('/select/grm', readAllGrmController);
+
+// READ TEAM MEMBERS
+teamRouter.get('/members/:teamId', readTeamMembersController);
 
 // UPDATE USER 
 teamRouter.put('/update/:teamId', updateTeamController);

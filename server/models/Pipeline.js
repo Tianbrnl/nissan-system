@@ -34,6 +34,10 @@ const Pipelines = sequelize.define('pipeline', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    memberId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     status: {
         type: DataTypes.ENUM('Sold', 'For Release', 'w/ Payment', 'For Bank Approval'),
         allowNull: true,
@@ -78,6 +82,9 @@ const Pipelines = sequelize.define('pipeline', {
         },
         {
             fields: ['teamId']
+        },
+        {
+            fields: ['memberId']
         },
         {
             fields: ['targetReleased', 'teamId']

@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect } from "react";
 import { useForm } from "../../hooks/form";
 import Input from "../ui/Input";
@@ -7,19 +5,17 @@ import Select from "../ui/Select";
 import Textarea from "../ui/Textarea";
 import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../ui/ui-modal";
 import { useState } from "react";
-import { readAllGrm } from "../../services/teamServices";
+import { readAllGrm, readTeamMembers } from "../../services/teamServices";
 import { readOnePipeline, updatePipeline } from "../../services/pipelineServices";
 import { toast } from "react-toastify"
 import { selectReadAllVariant, selectReadUnitVariant } from "../../services/variantServices";
 import { cleanDate } from "../../utils/format";
 
 export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAfter = () => { } }) {
-
-    const [errorMessage, setErrorMessage] = useState('');
-
     const [variants, setVariants] = useState([]);
     const [units, setUnits] = useState([]);
     const [grm, setGrm] = useState([]);
+    const [members, setMembers] = useState([]);
 
 
     const { formData, setFormData, handleInputChange } = useForm({
@@ -32,6 +28,7 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
         bank: '',
         client: '',
         grm: '',
+        member: '',
         status: '',
         monthStart: '',
         remarks: '',
@@ -53,6 +50,16 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
         toast.error(message);
     }
 
+    const handleTeamChange = (event) => {
+        const { value } = event.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            grm: value,
+            member: ''
+        }));
+    };
+
     useEffect(() => {
         try {
             const load = async () => {
@@ -71,6 +78,7 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
                         bank: p.bank || "",
                         client: p.client || "",
                         grm: p.teamId || "",
+                        member: p.memberId || "",
                         status: p.status || "",
                         monthStart: cleanDate(p.monthStart),
                         remarks: p.remarks || "",
@@ -82,7 +90,7 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
                         reservedAt: cleanDate(p.reservedAt),
                     });
                 } else {
-                    setErrorMessage(message);
+                    toast.error(message);
                 }
             };
             const loadVariant = async () => {
@@ -102,6 +110,25 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
             console.error(error);
         }
     }, []);
+
+    useEffect(() => {
+        try {
+            const loadMembers = async () => {
+                if (!formData.grm) {
+                    setMembers([]);
+                    return;
+                }
+
+                const { success, message, members: teamMembers } = await readTeamMembers(formData.grm);
+                if (success) return setMembers(teamMembers);
+                console.error(message);
+            };
+
+            loadMembers();
+        } catch (error) {
+            console.error(error);
+        }
+    }, [formData.grm]);
 
     useEffect(() => {
         try {
@@ -207,6 +234,16 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
                             options={grm}
                             required={true}
                             value={formData?.grm}
+                            onChange={handleTeamChange}
+                        />
+                        <Select
+                            label="Member Name"
+                            placeholder={formData?.grm ? "Select Member" : "Select GRM first"}
+                            name="member"
+                            options={members}
+                            required={false}
+                            disabled={!formData?.grm}
+                            value={formData?.member}
                             onChange={handleInputChange}
                         />
                         <Select

@@ -44,6 +44,20 @@ export const readAllGrm = async () => {
     }
 };
 
+// READ TEAM MEMBERS
+export const readTeamMembers = async (teamId) => {
+    try {
+        const response = await axios.get(`${API_URL}/api/team/members/${teamId}`);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to read team members'
+        };
+    }
+};
+
 // READ ONE TEAM
 export const readOneTeam = async (teamId) => {
     try {

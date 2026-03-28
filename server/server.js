@@ -11,6 +11,7 @@ import vehicleSalesRouter from './routes/vehicleSalesRoutes.js';
 import dashboardRouter from './routes/dashboardRoutes.js';
 import releaseRouter from "./routes/releaseRoutes.js";
 import applicationsApprovalsRouter from './routes/applicationsApprovalsRoutes.js';
+import { ensureTeamManagementSchema } from './utils/teamSchema.js';
 
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use("/api/applicationsApprovals", applicationsApprovalsRouter);
 const startServer = async () => {
     try {
         await connectToDatabase();
+        await ensureTeamManagementSchema();
         app.listen(port, () => {
             console.log(`Server running on PORT: ${port}`);
         });

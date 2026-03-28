@@ -1,5 +1,5 @@
 
-import { Pipelines, Teams, Units, Variants } from "../models/index.js";
+import { Pipelines, TeamMembers, Teams, Units, Variants } from "../models/index.js";
 import { capitalizeEachWord, removeUnnecessarySpaces } from "../utils/format.js";
 import { Op } from "sequelize";
 
@@ -59,6 +59,7 @@ export const createPipelineService = async (
     bank,
     client,
     grm,
+    member,
     status,
     monthStart,
     remarks,
@@ -70,21 +71,40 @@ export const createPipelineService = async (
     reservedAt
 ) => {
     try {
-        const normalizedTargetReleased = targetReleased?.trim() || monthStart?.trim() || null;
-        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased;
+        const normalizedTargetReleased = targetReleased?.trim() || null;
+        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
 
         if (
             !unit.trim() ||
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||
-            !grm ||
-            !normalizedMonthStart
+            !grm
         ) {
             return {
                 success: false,
                 message: "Please complete all fields to proceed."
             };
+        }
+
+        let memberId = null;
+
+        if (member) {
+            const selectedMember = await TeamMembers.findOne({
+                where: {
+                    id: member,
+                    teamId: grm
+                }
+            });
+
+            if (!selectedMember) {
+                return {
+                    success: false,
+                    message: "Please select a valid team member."
+                };
+            }
+
+            memberId = selectedMember.id;
         }
 
         const formattedClient = capitalizeEachWord(
@@ -99,8 +119,9 @@ export const createPipelineService = async (
             csNumber,
             transaction,
             bank,
-            client,
+            client: formattedClient,
             teamId: grm,
+            memberId,
             status,
             monthStart: normalizedMonthStart,
             remarks,
@@ -150,6 +171,7 @@ export const readOnePipelineService = async (pipelineId) => {
                         'bank',
                         'client',
                         'teamId',
+                        'memberId',
                         'status',
                         'monthStart',
                         'remarks',
@@ -279,6 +301,12 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
                 {
                     model: Teams,
                     attributes: ['teamCode', 'teamLeader']
+                },
+                {
+                    model: TeamMembers,
+                    as: 'member',
+                    attributes: ['id', 'memberName'],
+                    required: false
                 }
             ],
             where,
@@ -329,6 +357,7 @@ export const updatePipelineService = async (
     bank,
     client,
     grm,
+    member,
     status,
     monthStart,
     remarks,
@@ -341,20 +370,39 @@ export const updatePipelineService = async (
 ) => {
     try {
         const normalizedTargetReleased = targetReleased?.trim() || monthStart?.trim() || null;
-        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased;
+        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
 
         if (
             !unit.trim() ||
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||
-            !grm||
-            !normalizedMonthStart
+            !grm
         ) {
             return {
                 success: false,
                 message: "Please complete all fields to proceed."
             };
+        }
+
+        let memberId = null;
+
+        if (member) {
+            const selectedMember = await TeamMembers.findOne({
+                where: {
+                    id: member,
+                    teamId: grm
+                }
+            });
+
+            if (!selectedMember) {
+                return {
+                    success: false,
+                    message: "Please select a valid team member."
+                };
+            }
+
+            memberId = selectedMember.id;
         }
 
         // Create pipeline
@@ -365,8 +413,9 @@ export const updatePipelineService = async (
             csNumber,
             transaction,
             bank,
-            client,
+            client: capitalizeEachWord(removeUnnecessarySpaces(client)),
             teamId: grm,
+            memberId,
             status,
             monthStart: normalizedMonthStart,
             remarks,
