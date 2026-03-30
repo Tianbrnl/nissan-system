@@ -45,7 +45,24 @@ export default function ViewTeamMembers({ team, onClose = () => { } }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(team?.members || []).map((member) => (
+                                    {(team?.members || [])
+                                        .slice()
+                                        .sort((a, b) => {
+                                            const aSales = Number(a?.salesCount || 0);
+                                            const bSales = Number(b?.salesCount || 0);
+
+                                            const aNoRelease = aSales === 0;
+                                            const bNoRelease = bSales === 0;
+
+                                            //  Push "No Release" to bottom
+                                            if (aNoRelease !== bNoRelease) {
+                                                return aNoRelease - bNoRelease;
+                                            }
+
+                                            // If both are Active → sort by highest salesCount
+                                            return bSales - aSales;
+                                            })
+                                            .map((member) => (
                                         <tr key={member.id}>
                                             {/** Derive status from live count so 0 always renders as No Release in red. */}
                                             <td className="text-left font-medium">{member.memberName}</td>

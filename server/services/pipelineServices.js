@@ -274,6 +274,28 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
         }
 
         const offset = (currentPage - 1) * pageSize;
+        const include = [
+            {
+                model: Units,
+                attributes: ['name'],
+                include: [
+                    {
+                        model: Variants,
+                        attributes: ['name']
+                    }
+                ]
+            },
+            {
+                model: Teams,
+                attributes: ['teamCode', 'teamLeader']
+            },
+            {
+                model: TeamMembers,
+                as: 'member',
+                attributes: ['id', 'memberName'],
+                required: false
+            }
+        ];
         const queryOptions = {
             attributes: [
                 'id',
@@ -287,28 +309,7 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
                 'remarks',
                 'monthStart',
             ],
-            include: [
-                {
-                    model: Units,
-                    attributes: ['name'],
-                    include: [
-                        {
-                            model: Variants,
-                            attributes: ['name']
-                        }
-                    ]
-                },
-                {
-                    model: Teams,
-                    attributes: ['teamCode', 'teamLeader']
-                },
-                {
-                    model: TeamMembers,
-                    as: 'member',
-                    attributes: ['id', 'memberName'],
-                    required: false
-                }
-            ],
+            include,
             where,
             order: [['targetReleased', 'DESC'], ['id', 'DESC']],
             distinct: true,
@@ -320,7 +321,27 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
             queryOptions.limit = pageSize;
         }
 
-        const { count, rows } = await Pipelines.findAndCountAll(queryOptions);
+        const buildStatusCountQuery = (statusValue) => ({
+            include,
+            where: {
+                ...where,
+                status: statusValue
+            },
+            distinct: true,
+            subQuery: false
+        });
+
+        const [
+            { count, rows },
+            sold,
+            forRelease,
+            bankApproval
+        ] = await Promise.all([
+            Pipelines.findAndCountAll(queryOptions),
+            Pipelines.count(buildStatusCountQuery("Sold")),
+            Pipelines.count(buildStatusCountQuery("For Release")),
+            Pipelines.count(buildStatusCountQuery("For Bank Approval"))
+        ]);
 
         const totalItems = count;
         const totalPages = shouldExportAll
@@ -330,6 +351,12 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
         return {
             success: true,
             data: rows,
+            totals: {
+                entries: totalItems,
+                sold,
+                forRelease,
+                bankApproval
+            },
             pagination: {
                 totalItems,
                 totalPages,

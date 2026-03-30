@@ -57,6 +57,12 @@ export default function Pipeline() {
         currentPage: 1,
         pageSize: PAGE_SIZE,
     });
+    const [totals, setTotals] = useState({
+        entries: 0,
+        sold: 0,
+        forRelease: 0,
+        bankApproval: 0,
+    });
     const [isLoading, setIsLoading] = useState(false);
 
     const [showCreate, setshowCreate] = useState(false);
@@ -80,13 +86,6 @@ export default function Pipeline() {
     const [grmOptions, setGrmOptions] = useState([{ value: "All GRMs", name: "All GRMs" }]);
     const [modelOptions, setModelOptions] = useState([{ value: "All Models", name: "All Models" }]);
 
-    const totals = {
-        entries: pagination.totalItems,
-        sold: 1,
-        forRelease: 1,
-        bankApproval: 1,
-    };
-
     const handleEdit = (id) => {
         setPipelineId(id);
         setShowUpdate(true);
@@ -100,7 +99,7 @@ export default function Pipeline() {
 
     const loadTable = async (page = currentPage, activeFilters = appliedFilters) => {
         setIsLoading(true);
-        const { success, message, data: pipelines = [], pagination: paginationData } = await readAllPipeline({
+        const { success, message, data: pipelines = [], pagination: paginationData, totals: totalsData } = await readAllPipeline({
             page,
             limit: PAGE_SIZE,
             month: selectedMonth,
@@ -117,6 +116,12 @@ export default function Pipeline() {
                 totalPages: 0,
                 currentPage: page,
                 pageSize: PAGE_SIZE,
+            });
+            setTotals(totalsData ?? {
+                entries: paginationData?.totalItems ?? 0,
+                sold: 0,
+                forRelease: 0,
+                bankApproval: 0,
             });
             setTotalPages(paginationData?.totalPages ?? 0);
             setCurrentPage(paginationData?.currentPage ?? page);
