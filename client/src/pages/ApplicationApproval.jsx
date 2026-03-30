@@ -25,7 +25,7 @@ export default function ApplicationApproval() {
         const loadApplicationsApprovals = async () => {
             const formattedToYear = monthYear.substring(0, 4);
             const { success, message, applicationsApprovals, totals } = await fetchApplicationsApprovals(formattedToYear);
-            console.log({ applicationsApprovals, totals });
+            
             if (success) return setApplicationsApprovalsData({ applicationsApprovals, totals });
             console.error(message);
         }

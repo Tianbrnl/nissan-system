@@ -1,13 +1,16 @@
 import express from 'express';
-import { userRegistrationController } from '../controllers/userControllers.js';
+import { fetchUserController, logoutUserController, userLoginController } from '../controllers/userControllers.js';
+import { authenticateUserJWT } from '../middleware/auth.js';
 
 const userRouter = express.Router();
 
-// REGISTER USER 
-userRouter.post('/register', userRegistrationController);
+// LOGIN USER 
+userRouter.post('/login', userLoginController);
 
-// // LOGIN USER 
-// userRouter.post('/login', userLoginController);
+// LOGOUT USER
+userRouter.get('/logout', authenticateUserJWT, logoutUserController);
 
+// FETCH USER
+userRouter.get('/fetchUser', authenticateUserJWT, fetchUserController);
 
 export default userRouter;
