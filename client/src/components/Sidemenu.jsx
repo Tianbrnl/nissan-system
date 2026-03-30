@@ -1,8 +1,14 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FileDown, FileText, GitBranch, LayoutDashboard, LogOut, Menu, SquareCheckBig, TrendingUp, Users, X } from "lucide-react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { UserContext } from "../context/AuthProvider";
+import { handleLogout } from "../services/userServices";
 
 export default function Sidemenu() {
+
+    const { setUser } = useContext(UserContext);
+
+    const navigate = useNavigate();
 
     const location = useLocation();
 
@@ -45,6 +51,19 @@ export default function Sidemenu() {
             name: 'Team',
         },
     ];
+
+    const handleSubmit = async () => {
+        try {
+            const { success } = await handleLogout();
+            if (success) {
+                setUser(null);
+                navigate('/');
+                return;
+            }
+        } catch (error) {
+            console.error('Error on handleLogout:', error);
+        }
+    }
 
     return (
         <>
@@ -90,7 +109,10 @@ export default function Sidemenu() {
 
                 {/* Logout */}
                 <div className="border-b border-nissan-darkGray p-4">
-                    <button className="btn btn-ghost border-0 shadow-none hover:bg-nissan-darkGray hover:text-white text-nissan-lightGray w-full rounded-lg justify-start gap-4">
+                    <button
+                        className="btn btn-ghost border-0 shadow-none hover:bg-nissan-darkGray hover:text-white text-nissan-lightGray w-full rounded-lg justify-start gap-4"
+                        onClick={handleSubmit}
+                    >
                         <LogOut size={20} /> Logout
                     </button>
                 </div>

@@ -12,6 +12,7 @@ import dashboardRouter from './routes/dashboardRoutes.js';
 import releaseRouter from "./routes/releaseRoutes.js";
 import applicationsApprovalsRouter from './routes/applicationsApprovalsRoutes.js';
 import { ensureTeamManagementSchema } from './utils/teamSchema.js';
+import seeds from './seeds/seeds.js';
 
 
 dotenv.config();
@@ -21,7 +22,10 @@ const app = express();
 const port = process.env.PORT || 8001;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:5173"],
+    credentials: true
+}));
 
 app.use(cookieParser());
 
@@ -43,6 +47,10 @@ app.use("/api/applicationsApprovals", applicationsApprovalsRouter);
 const startServer = async () => {
     try {
         await connectToDatabase();
+        if (process.env.SEED_DATA === 'true') {
+            console.log('🌱 Running seed data...');
+            await seeds();
+        }
         await ensureTeamManagementSchema();
         app.listen(port, () => {
             console.log(`Server running on PORT: ${port}`);

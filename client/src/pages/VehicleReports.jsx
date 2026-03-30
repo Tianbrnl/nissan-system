@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
@@ -231,10 +232,6 @@ export default function VehicleReports() {
             const p = await fetchPaymentTermReport();
             const r = await fetchReservationByTeamReport();
 
-            console.log("Vehicle:", v);
-            console.log("Payment:", p);
-            console.log("Reservation:", r);
-
             if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
             if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
             if (r?.success) setReservationByTeam(transformReservation(r.data, year));
@@ -276,8 +273,8 @@ export default function VehicleReports() {
                                                         setYearDropdownOpen(false);
                                                     }}
                                                     className={`px-2 py-2 text-sm rounded-lg font-medium transition-all cursor-pointer border-2 ${y === year
-                                                            ? 'bg-nissan-red text-white border-nissan-red font-bold'
-                                                            : 'bg-white text-gray-700 border-gray-200 hover:border-nissan-red hover:text-nissan-red'
+                                                        ? 'bg-nissan-red text-white border-nissan-red font-bold'
+                                                        : 'bg-white text-gray-700 border-gray-200 hover:border-nissan-red hover:text-nissan-red'
                                                         }`}
                                                 >
                                                     {y}
@@ -312,7 +309,7 @@ export default function VehicleReports() {
                             >
                                 <Pen size={16} />
                             </button>
-                            
+
                         </div>
                     </div>
 
@@ -391,7 +388,7 @@ export default function VehicleReports() {
                         <p className="text-lg font-semibold">Payment Term (Monthly) - {year}</p>
 
 
-                        
+
 
                     </div>
                     <div className="table-style">
@@ -435,7 +432,7 @@ export default function VehicleReports() {
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
                         <p className="text-lg font-semibold">Reservation by Team (Monthly) - {year}</p>
 
-                        
+
                     </div>
 
                     <div className="table-style">
