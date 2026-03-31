@@ -1,11 +1,11 @@
-import { FileDown } from "lucide-react";
+import { FileDown, Pen  } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import EditMonthEndCommitmentModal from "../components/ReleasePlan/EditMonthEndCommitmentModal";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { fetchReleasePlan, updateReleasePlan } from "../services/releaseServices";
 import { exportToWord } from "../utils/ExportToWord";
-import Input from "../components/ui/Input";
 
 const getTodayString = () => new Date().toISOString().split("T")[0];
 const getTodayMonthString = () => getTodayString().slice(0, 7);
@@ -54,6 +54,8 @@ export default function ReleasePlan() {
     const [editMonth, setEditMonth] = useState(getTodayMonthString());
     const [groups, setGroups] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         try {
@@ -106,6 +108,10 @@ export default function ReleasePlan() {
         setSelectedDate(event.target.value);
     };
 
+    const handleEditMonthChange = (event) => {
+        setEditMonth(event.target.value);
+    };
+
     const handleEditCommitment = (groupId, value) => {
         const parsedValue = Number.parseInt(value, 10);
 
@@ -118,7 +124,12 @@ export default function ReleasePlan() {
 
     const handleSaveCommitments = async () => {
         try {
-            setIsLoading(true);
+            if (!editMonth) {
+                toast.error("Please select a month before saving.");
+                return false;
+            }
+
+            setIsSaving(true);
 
             const payload = groups.map((group) => ({
                 team: group.team,
@@ -136,7 +147,7 @@ export default function ReleasePlan() {
             if (!success) {
                 console.error(message);
                 toast.error(message);
-                return;
+                return false;
             }
 
             const savedGroups = mapApiGroups(data);
@@ -148,10 +159,33 @@ export default function ReleasePlan() {
                 ...group,
                 monthEndCommitment: savedMonthEndByTeam.get(group.team) ?? group.monthEndCommitment
             })));
+            toast.success(`Release plan saved for ${editMonth}.`);
+            return true;
         } catch (error) {
             console.error(error);
+            return false;
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
+        }
+    };
+
+    const handleOpenEditModal = () => {
+        setIsEditModalOpen(true);
+    };
+
+    const handleCloseEditModal = () => {
+        if (isSaving) {
+            return;
+        }
+
+        setIsEditModalOpen(false);
+    };
+
+    const handleSaveFromModal = async () => {
+        const didSave = await handleSaveCommitments();
+
+        if (didSave) {
+            setIsEditModalOpen(false);
         }
     };
 
@@ -254,21 +288,14 @@ export default function ReleasePlan() {
                                     <td className="rowFooter">
                                         <div className="flex items-center justify-between gap-2">
                                             <span>MONTH-END COMMITMENT</span>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    type="month"
-                                                    value={editMonth}
-                                                    onChange={(e) => setEditMonth(e.target.value)}
-                                                />
-                                                <button
-                                                    className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
-                                                    onClick={handleSaveCommitments}
-                                                    disabled={isLoading}
-                                                    title={`Save month-end commitments for ${editMonth}`}
-                                                >
-                                                    {isLoading ? "Saving..." : "Save"}
-                                                </button>
-                                            </div>
+                                            <button
+                                                className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
+                                                onClick={handleOpenEditModal}
+                                                disabled={isLoading}
+                                                title="Edit month-end commitments"
+                                            >
+                                                <Pen size={16} /> Edit
+                                            </button>
                                         </div>
                                     </td>
                                     <td className="varianceCol">VARIANCE</td>
@@ -291,15 +318,7 @@ export default function ReleasePlan() {
                                             <td>{group.actual}</td>
                                             <td>{group.additionalThisWeek}</td>
                                             <td>{group.additionalNextWeek}</td>
-                                            <td className="rowFooter">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={group.monthEndCommitment}
-                                                    onChange={(event) => handleEditCommitment(group.id, event.target.value)}
-                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-center"
-                                                />
-                                            </td>
+                                            <td className="rowFooter">{group.monthEndCommitment}</td>
                                             <td className={`varianceCol ${isBehind ? "text-nissan-red" : "text-green-600"}`}>
                                                 {variance}
                                             </td>
@@ -329,6 +348,18 @@ export default function ReleasePlan() {
                     </div>
                 </div>
             </div>
+
+            <EditMonthEndCommitmentModal
+                isOpen={isEditModalOpen}
+                editMonth={editMonth}
+                groups={groups}
+                isSaving={isSaving}
+                getTeamDisplayName={getTeamDisplayName}
+                onClose={handleCloseEditModal}
+                onMonthChange={handleEditMonthChange}
+                onCommitmentChange={handleEditCommitment}
+                onSave={handleSaveFromModal}
+            />
         </div>
     );
 }
