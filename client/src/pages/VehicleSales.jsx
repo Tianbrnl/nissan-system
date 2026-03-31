@@ -1,3 +1,4 @@
+import { FileDown } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import TeamPerformance from "../components/TeamPerformance";
@@ -7,6 +8,7 @@ import { useState } from "react";
 import UnitDistribution from "../components/UnitDistribution";
 import UnitContributionPerTeam from "../components/UnitContributionPerTeam";
 import Input from "../components/ui/Input";
+import { exportToWord } from "../utils/ExportToWord";
 
 export default function VehicleSales() {
     const today = new Date();
@@ -98,6 +100,30 @@ export default function VehicleSales() {
         }
     }, [monthYear])
 
+    const handleExport = async () => {
+        const unitHeaders = data[0]?.counts?.map((count) => count?.name ?? "-") ?? [];
+        const headers = ["TEAM", ...unitHeaders, "TOTAL"];
+        const rows = data.map((team) => [
+            team?.team ?? "-",
+            ...(team?.counts?.map((count) => count?.count ?? 0) ?? []),
+            team?.total ?? 0,
+        ]);
+
+        rows.push([
+            "TOTAL",
+            ...unitTotals.map((unitTotal) => unitTotal?.total ?? 0),
+            unitTotals?.reduce((sum, num) => sum + (num?.total ?? 0), 0) ?? 0,
+        ]);
+
+        await exportToWord({
+            title: `${monthYear} Performance per Group`,
+            subtitle: "Vehicle sales breakdown by team and model",
+            headers,
+            rows,
+            fileName: `Performance_Per_Group_${monthYear}`,
+        });
+    };
+
     return (
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
@@ -110,11 +136,20 @@ export default function VehicleSales() {
                         <PageSubTitle>Vehicle sales breackdown by team and model</PageSubTitle>
                     </div>
 
-                    <Input
-                        type="month"
-                        value={monthYear}
-                        onChange={(e) => setMonthYear(e.target.value)}
-                    />
+                    <div className="flex gap-3 items-center">
+                        <Input
+                            type="month"
+                            value={monthYear}
+                            onChange={(e) => setMonthYear(e.target.value)}
+                        />
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
+                            onClick={handleExport}
+                            disabled={data.length === 0}
+                        >
+                            <FileDown size={16} /> Export
+                        </button>
+                    </div>
                 </div>
 
                 {/* totals */}

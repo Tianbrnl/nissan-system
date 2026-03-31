@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { fetchApplicationSold } from "../services/dashboardServices";
 
-export default function ApplicationSold() {
+export default function ApplicationSold({ year }) {
 
     const [applicationSold, setApplicationSold] = useState([]);
 
@@ -19,7 +19,7 @@ export default function ApplicationSold() {
         try {
             try {
                 const loadApplicationSold = async () => {
-                    const { success, message, applicationSold: apiApplicationSold } = await fetchApplicationSold();
+                    const { success, message, applicationSold: apiApplicationSold } = await fetchApplicationSold(year);
                     if (success) return setApplicationSold(apiApplicationSold);
                     console.error(message);
                 }
@@ -31,7 +31,7 @@ export default function ApplicationSold() {
             console.error(error);
         }
 
-    }, []);
+    }, [year]);
 
 
     return (

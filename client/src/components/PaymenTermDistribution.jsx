@@ -14,7 +14,7 @@ const COLORS = [
     "#F59E0B"
 ];
 
-export default function PaymentTermDistribution() {
+export default function PaymentTermDistribution({ monthYear }) {
 
     const [paymentTerm, setpaymentTerm] = useState([]);
 
@@ -22,7 +22,7 @@ export default function PaymentTermDistribution() {
     useEffect(() => {
         try {
             const loadPaymentTermDistribution = async () => {
-                const { success, message, paymentTerm: apiPaymentTerm } = await paymentTermDistribution();
+                const { success, message, paymentTerm: apiPaymentTerm } = await paymentTermDistribution(monthYear);
                 if (success) return setpaymentTerm(apiPaymentTerm);
                 console.error(message);
             }
@@ -30,12 +30,12 @@ export default function PaymentTermDistribution() {
         } catch (error) {
             console.error(error);
         }
-    },[]);
+    }, [monthYear]);
 
     return (
         <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-                <Tooltip formatter={(value) => `${value}%`} />
+                <Tooltip formatter={(value) => [`${value}`, "Count"]} />
 
                 <Pie
                     data={paymentTerm}

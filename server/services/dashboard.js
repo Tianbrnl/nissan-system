@@ -80,18 +80,36 @@ export const fetchDashboardTotalService = async () => {
 };
 
 // PAYMENT TERM DISTRIBUTION
-export const paymentTermDistributionService = async () => {
+export const paymentTermDistributionService = async (monthYear) => {
     try {
+        const [year, month] = String(monthYear || "").split("-").map(Number);
+        const selectedYear = year || new Date().getFullYear();
+        const selectedMonth = month || new Date().getMonth() + 1;
+        const monthFilter = {
+            [Op.and]: [
+                Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("monthStart")), selectedYear),
+                Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("monthStart")), selectedMonth)
+            ]
+        };
 
         const cash = await Pipelines.count({
-            where: { transaction: 'Cash' }
+            where: {
+                transaction: 'Cash',
+                ...monthFilter
+            }
         });
 
         const financing = await Pipelines.count({
-            where: { transaction: 'Financing' }
+            where: {
+                transaction: 'Financing',
+                ...monthFilter
+            }
         });
         const bankOp = await Pipelines.count({
-            where: { transaction: 'Bank OP' }
+            where: {
+                transaction: 'Bank OP',
+                ...monthFilter
+            }
         });
 
         return {
@@ -100,7 +118,9 @@ export const paymentTermDistributionService = async () => {
                 { name: 'Cash', data: cash },
                 { name: 'Financing', data: financing },
                 { name: 'Bank OP', data: bankOp }
-            ]
+            ],
+            selectedYear,
+            selectedMonth
         };
 
     } catch (error) {
@@ -113,8 +133,12 @@ export const paymentTermDistributionService = async () => {
 };
 
 // RESERVATION BY TEAM
-export const reservationByTeamService = async () => {
+export const reservationByTeamService = async (monthYear) => {
     try {
+        const [year, month] = String(monthYear || "").split("-").map(Number);
+        const selectedYear = year || new Date().getFullYear();
+        const selectedMonth = month || new Date().getMonth() + 1;
+
         const result = await Pipelines.findAll({
             attributes: [
                 // Concatenate teamCode and teamLeader as "teamCode - teamLeader"
@@ -129,9 +153,15 @@ export const reservationByTeamService = async () => {
                 }
             ],
             where: {
-                reservedAt: {
-                    [Op.ne]: '0000-00-00'
-                }
+                [Op.and]: [
+                    {
+                        reservedAt: {
+                            [Op.ne]: '0000-00-00'
+                        }
+                    },
+                    Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("reservedAt")), selectedYear),
+                    Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("reservedAt")), selectedMonth)
+                ]
             },
             group: ['team.id'],
             raw: true
@@ -144,7 +174,9 @@ export const reservationByTeamService = async () => {
 
         return {
             success: true,
-            teams
+            teams,
+            selectedYear,
+            selectedMonth
         };
 
     } catch (error) {
@@ -157,10 +189,10 @@ export const reservationByTeamService = async () => {
 };
 
 // MONTHLY SOLD TREND
-export const monthlySoldTrendService = async () => {
+export const monthlySoldTrendService = async (selectedYear = new Date().getFullYear()) => {
     try {
 
-        const currentYear = new Date().getFullYear();
+        const currentYear = Number(selectedYear);
         const previousYear = currentYear - 1;
 
         const results = await Pipelines.findAll({
@@ -212,7 +244,9 @@ export const monthlySoldTrendService = async () => {
 
         return {
             success: true,
-            monthlySoldTrend
+            monthlySoldTrend,
+            selectedYear: currentYear,
+            previousYear
         };
 
     } catch (error) {
@@ -225,10 +259,10 @@ export const monthlySoldTrendService = async () => {
 };
 
 // APPLICATION SOLD
-export const applicationSoldService = async () => {
+export const applicationSoldService = async (selectedYear = new Date().getFullYear()) => {
     try {
 
-        const currentYear = new Date().getFullYear();
+        const currentYear = Number(selectedYear);
 
         const results = await Pipelines.findAll({
             attributes: [
@@ -281,7 +315,8 @@ export const applicationSoldService = async () => {
 
         return {
             success: true,
-            applicationSold
+            applicationSold,
+            selectedYear: currentYear
         };
 
     } catch (error) {

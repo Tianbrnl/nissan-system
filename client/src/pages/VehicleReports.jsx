@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
@@ -147,72 +146,6 @@ export default function VehicleReports() {
 
     const months = generateYearMonths();
 
-    const handleExportVehicleSales = async () => {
-        const headers = ["UNITS", ...months, "TOTAL"];
-        const rows = vehicleSales.vehicles.map(vehicle => [
-            vehicle.name,
-            ...vehicle.data,
-            vehicle.data.reduce((sum, value) => sum + value, 0)
-        ]);
-        rows.push([
-            "TOTAL",
-            ...vehicleSales.totals,
-            vehicleSales.totals.reduce((sum, value) => sum + value, 0)
-        ]);
-
-        await exportToWord({
-            title: `${year} Vehicle Sales by Units`,
-            subtitle: "Monthly breakdown by model",
-            headers,
-            rows,
-            fileName: `Vehicle_Sales_${year}`
-        });
-    };
-
-    const handleExportPaymentTerms = async () => {
-        const headers = ["PAYMENT TERM", ...months, "TOTAL"];
-        const rows = paymentTerm.payment.map(payment => [
-            payment.name,
-            ...payment.data,
-            payment.data.reduce((sum, value) => sum + value, 0)
-        ]);
-        rows.push([
-            "TOTAL",
-            ...paymentTerm.totals,
-            paymentTerm.totals.reduce((sum, value) => sum + value, 0)
-        ]);
-
-        await exportToWord({
-            title: `${year} Payment Terms Report`,
-            subtitle: "Monthly breakdown of payment methods",
-            headers,
-            rows,
-            fileName: `Payment_Terms_${year}`
-        });
-    };
-
-    const handleExportReservations = async () => {
-        const headers = ["TEAM", ...months, "TOTAL"];
-        const rows = reservationByTeam.teams.map(team => [
-            team.name,
-            ...team.data,
-            team.data.reduce((sum, value) => sum + value, 0)
-        ]);
-        rows.push([
-            "TOTAL",
-            ...reservationByTeam.totals,
-            reservationByTeam.totals.reduce((sum, value) => sum + value, 0)
-        ]);
-
-        await exportToWord({
-            title: `${year} Reservations by Team`,
-            subtitle: "Monthly reservations breakdown by team",
-            headers,
-            rows,
-            fileName: `Reservations_By_Team_${year}`
-        });
-    };
-
     const handleExportAll = async () => {
         const vehicleSalesTable = createVehicleSalesByUnitsExport(vehicleSales, year);
         const paymentTermTable = createPaymentTermMonthlyExport(paymentTerm, year);
@@ -243,12 +176,12 @@ export default function VehicleReports() {
         <div className="flex h-screen max-w-screen">
             <Sidemenu />
             <div className="grow p-8 space-y-8 overflow-auto">
-                <div className="flex justify-between items-center gap-4 flex-wrap">
-                    <div>
+                <div className="flex items-end gap-4 flex-wrap">
+                    <div className="mr-auto">
                         <PageTitle>{year} VEHICLE & RESERVATION REPORTS</PageTitle>
                         <PageSubTitle>Monthly breakdown by model, payment terms, and team reservations</PageSubTitle>
                     </div>
-                    <div className="flex gap-7 items-center">
+                    <div className="flex gap-3 items-center">
                         <DropdownMenu.Root open={yearDropdownOpen} onOpenChange={setYearDropdownOpen}>
                             <DropdownMenu.Trigger asChild>
                                 <button className="w-24 text-center px-5 py-2 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-nissan-red bg-white hover:bg-gray-50 font-medium transition-colors">

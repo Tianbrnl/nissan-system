@@ -17,9 +17,11 @@ export const fetchDashboardTotals = async () => {
 }
 
 // PAYMENT TERM DISTRIBUTION
-export const paymentTermDistribution = async () => {
+export const paymentTermDistribution = async (monthYear) => {
     try {
-        const response = await axios.get(`${API_URL}/api/dashboard/paymentTermDistribution`);
+        const response = await axios.get(`${API_URL}/api/dashboard/paymentTermDistribution`, {
+            params: { monthYear }
+        });
         return response.data;
     } catch (error) {
         console.error(error);
@@ -31,9 +33,11 @@ export const paymentTermDistribution = async () => {
 }
 
 // RESERVATION BY TEAM
-export const reservationByTeam = async () => {
+export const reservationByTeam = async (monthYear) => {
     try {
-        const response = await axios.get(`${API_URL}/api/dashboard/reservationByTeam`);
+        const response = await axios.get(`${API_URL}/api/dashboard/reservationByTeam`, {
+            params: { monthYear }
+        });
         return response.data;
     } catch (error) {
         console.error(error);
@@ -45,9 +49,11 @@ export const reservationByTeam = async () => {
 }
 
 // MONTHLY SOLD TREND
-export const fetchMonthlySoldTrend = async () => {
+export const fetchMonthlySoldTrend = async (year) => {
     try {
-        const response = await axios.get(`${API_URL}/api/dashboard/monthlySoldTrend`);
+        const response = await axios.get(`${API_URL}/api/dashboard/monthlySoldTrend`, {
+            params: { year }
+        });
         return response.data;
     } catch (error) {
         console.error(error);
@@ -60,9 +66,11 @@ export const fetchMonthlySoldTrend = async () => {
 
 
 // APPLICATION SOLD
-export const fetchApplicationSold = async () => {
+export const fetchApplicationSold = async (year) => {
     try {
-        const response = await axios.get(`${API_URL}/api/dashboard/applicationSold`);
+        const response = await axios.get(`${API_URL}/api/dashboard/applicationSold`, {
+            params: { year }
+        });
         return response.data;
     } catch (error) {
         console.error(error);
@@ -72,4 +80,3 @@ export const fetchApplicationSold = async () => {
         };
     }
 }
-
