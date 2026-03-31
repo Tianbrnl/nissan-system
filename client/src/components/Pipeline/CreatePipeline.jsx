@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect } from "react";
 import { useForm } from "../../hooks/form";
 import Input from "../ui/Input";
@@ -209,7 +210,7 @@ export default function CreatePipeline({ onClose = () => { }, runAfter = () => {
                             onChange={handleTeamChange}
                         />
                         <Select
-                            label="Member Name"
+                            label="NPM"
                             placeholder={formData?.grm ? "Select Member" : "Select GRM first"}
                             name="member"
                             options={members}
@@ -259,8 +260,9 @@ export default function CreatePipeline({ onClose = () => { }, runAfter = () => {
                             value={formData?.appliedAt}
                             onChange={handleInputChange}
                         />
+                        
                         <Input
-                            label="Month Approved (As Applied)"
+                            label="Approved (As Applied)"
                             type="date"
                             name="approvedAppliedAt"
                             value={formData?.approvedAppliedAt}

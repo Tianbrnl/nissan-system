@@ -74,26 +74,26 @@ export default function Team() {
                 </div>
 
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-                    <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm text-gray-500">Total Teams</p>
                         <p className="mt-2 text-3xl font-semibold text-nissan-black">{data.length}</p>
                     </div>
-                    <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                         <p className="text-sm text-gray-500">Total NMPs</p>
                         <p className="mt-2 text-3xl font-semibold text-nissan-black">
                             {data.reduce((total, team) => total + (team.membersCount || 0), 0)}
                         </p>
                     </div>
-                    <div className="rounded-3xl border border-red-100 bg-red-50 p-5 shadow-sm">
-                        <p className="text-sm text-red-500">NMPs With No Release</p>
-                        <p className="mt-2 text-3xl font-semibold text-red-600">
+                    <div className="border border-gray-300 bg-nissan-red text-white rounded-xl p-4 space-y-2">
+                        <p className="text-sm">NMPs With No Release</p>
+                        <p className="mt-2 text-3xl font-semibold">
                             {data.reduce((total, team) => total + (team.noSalesCount || 0), 0)}
                         </p>
                     </div>
                 </div>
 
                 {/* Team Performance */}
-                <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+                <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="table-style">
                         <table>
                             <thead>

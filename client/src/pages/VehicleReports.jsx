@@ -118,6 +118,9 @@ const transformReservation = (data, year) => {
 };
 
 export default function VehicleReports() {
+
+    const [isLoading, setIsLoading] = useState(false);
+
     const today = new Date();
     const currentYear = today.getFullYear();
     const [year, setYear] = useState(currentYear);
@@ -144,33 +147,44 @@ export default function VehicleReports() {
         setShowUpdateUnit(true);
     }
 
-    const months = generateYearMonths();
-
     const handleExportAll = async () => {
-        const vehicleSalesTable = createVehicleSalesByUnitsExport(vehicleSales, year);
-        const paymentTermTable = createPaymentTermMonthlyExport(paymentTerm, year);
-        const reservationByTeamTable = createReservationByTeamMonthlyExport(reservationByTeam, year);
+        try {
+            const vehicleSalesTable = createVehicleSalesByUnitsExport(vehicleSales, year);
+            const paymentTermTable = createPaymentTermMonthlyExport(paymentTerm, year);
+            const reservationByTeamTable = createReservationByTeamMonthlyExport(reservationByTeam, year);
 
-        await exportToWord({
-            title: `${year} Vehicle Reports`,
-            subtitle: "Complete monthly breakdown",
-            tables: [vehicleSalesTable, paymentTermTable, reservationByTeamTable],
-            fileName: `Vehicle_Reports_${year}`
-        });
+            await exportToWord({
+                title: `${year} Vehicle Reports`,
+                subtitle: "Complete monthly breakdown",
+                tables: [vehicleSalesTable, paymentTermTable, reservationByTeamTable],
+                fileName: `Vehicle_Reports_${year}`
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
-        const loadReports = async () => {
-            const v = await fetchVehicleSalesReport();
-            const p = await fetchPaymentTermReport();
-            const r = await fetchReservationByTeamReport();
+        try {
+            setIsLoading(true);
+            const loadReports = async () => {
+                const v = await fetchVehicleSalesReport();
+                const p = await fetchPaymentTermReport();
+                const r = await fetchReservationByTeamReport();
 
-            if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
-            if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
-            if (r?.success) setReservationByTeam(transformReservation(r.data, year));
-        };
+                if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
+                if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
+                if (r?.success) setReservationByTeam(transformReservation(r.data, year));
+            };
 
-        loadReports();
+            loadReports();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     }, [year]);
     return (
         <div className="flex h-screen max-w-screen">
@@ -219,7 +233,10 @@ export default function VehicleReports() {
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
 
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExportAll}>
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl opacity-60"
+                            disabled={isLoading}
+                            onClick={handleExportAll}>
                             <FileDown size={16} /> Export
                         </button>
                     </div>
