@@ -22,7 +22,7 @@ export const fetchDashboardTotalController = async (req, res) => {
 export const paymentTermDistributionCOntroller = async (req, res) => {
     try {
 
-        const result = await paymentTermDistributionService();
+        const result = await paymentTermDistributionService(req.query.monthYear);
 
         return res.json(result);
 
@@ -40,7 +40,7 @@ export const paymentTermDistributionCOntroller = async (req, res) => {
 export const reservationByTeamController = async (req, res) => {
     try {
 
-        const result = await reservationByTeamService();
+        const result = await reservationByTeamService(req.query.monthYear);
 
         return res.json(result);
 
@@ -58,7 +58,8 @@ export const reservationByTeamController = async (req, res) => {
 export const monthlySoldTrendController = async (req, res) => {
     try {
 
-        const result = await monthlySoldTrendService();
+        const year = Number(req.query.year) || new Date().getFullYear();
+        const result = await monthlySoldTrendService(year);
 
         return res.json(result);
 
@@ -76,7 +77,8 @@ export const monthlySoldTrendController = async (req, res) => {
 export const applicationSoldController = async (req, res) => {
     try {
 
-        const result = await applicationSoldService();
+        const year = Number(req.query.year) || new Date().getFullYear();
+        const result = await applicationSoldService(year);
 
         return res.json(result);
 
