@@ -24,17 +24,17 @@ export default function ViewTeamMembers({ team, onClose = () => { } }) {
                     />
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                        <div className="border border-gray-300 rounded-xl p-4 space-y-2">
                             <p className="text-sm text-gray-500">NMP's Count</p>
                             <p className="mt-2 text-3xl font-semibold text-nissan-black">{team?.membersCount || 0}</p>
                         </div>
-                        <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                            <p className="text-sm text-red-500">No Release Count</p>
-                            <p className="mt-2 text-3xl font-semibold text-red-600">{team?.noSalesCount || 0}</p>
+                        <div className="border border-gray-300 bg-nissan-red text-white rounded-xl p-4 space-y-2">
+                            <p className="text-sm ">No Release Count</p>
+                            <p className="mt-2 text-3xl font-semibold ">{team?.noSalesCount || 0}</p>
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-gray-200">
+                    <div className="rounded-xl border border-gray-300 overflow-hidden">
                         <div className="table-style">
                             <table>
                                 <thead>
@@ -61,19 +61,19 @@ export default function ViewTeamMembers({ team, onClose = () => { } }) {
 
                                             // If both are Active → sort by highest salesCount
                                             return bSales - aSales;
-                                            })
-                                            .map((member) => (
-                                        <tr key={member.id}>
-                                            {/** Derive status from live count so 0 always renders as No Release in red. */}
-                                            <td className="text-left font-medium">{member.memberName}</td>
-                                            <td>{member.salesCount}</td>
-                                            <td>
-                                                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(getMemberStatus(member))}`}>
-                                                    {getMemberStatus(member)}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                        })
+                                        .map((member) => (
+                                            <tr key={member.id}>
+                                                {/** Derive status from live count so 0 always renders as No Release in red. */}
+                                                <td className="text-left font-medium">{member.memberName}</td>
+                                                <td>{member.salesCount}</td>
+                                                <td>
+                                                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(getMemberStatus(member))}`}>
+                                                        {getMemberStatus(member)}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
 
                                     {(!team?.members || team.members.length === 0) && (
                                         <tr>

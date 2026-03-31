@@ -23,6 +23,7 @@ export default function PaymentTermDistribution({ monthYear }) {
         try {
             const loadPaymentTermDistribution = async () => {
                 const { success, message, paymentTerm: apiPaymentTerm } = await paymentTermDistribution(monthYear);
+                console.log(apiPaymentTerm);
                 if (success) return setpaymentTerm(apiPaymentTerm);
                 console.error(message);
             }

@@ -75,7 +75,7 @@ export const createPipelineService = async (
         const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
 
         if (
-            !unit.trim() ||
+            !unit||
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||
@@ -400,7 +400,7 @@ export const updatePipelineService = async (
         const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
 
         if (
-            !unit.trim() ||
+            !unit ||
             !color.trim() ||
             !transaction.trim() ||
             !client.trim() ||

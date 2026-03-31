@@ -85,16 +85,24 @@ export const getReservationByTeamMonthly = async () => {
 // READ ALL TEAM PERFORMANCE
 export const readAllTeamPerformanceService = async (monthYear) => {
   try {
+
     // Parse monthYear into start and end dates
     const [year, month] = monthYear.split("-");
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 1);
 
-    // Fetch all units and teams
-    const units = await Units.findAll({ attributes: ["id", "name"], raw: true });
-    const teams = await Teams.findAll({ attributes: ["id", "teamCode", "teamLeader"], raw: true });
+    // Fetch units and teams
+    const units = await Units.findAll({
+      attributes: ["id", "name"],
+      raw: true
+    });
 
-    // Fetch all sales in one query
+    const teams = await Teams.findAll({
+      attributes: ["id", "teamCode", "teamLeader"],
+      raw: true
+    });
+
+    // Fetch sales
     const sales = await Pipelines.findAll({
       attributes: [
         "teamId",
@@ -112,27 +120,28 @@ export const readAllTeamPerformanceService = async (monthYear) => {
       raw: true
     });
 
-    // Build a map for fast lookup
+    // Build sales map
     const salesMap = {};
-    sales.forEach(s => {
+    sales.forEach((s) => {
       if (!salesMap[s.teamId]) salesMap[s.teamId] = {};
       salesMap[s.teamId][s.unitId] = Number(s.total);
     });
 
-    // Compute totals per unit
+    // Compute unit totals
     const unitTotalsMap = {};
-    units.forEach(unit => {
+    units.forEach((unit) => {
       unitTotalsMap[unit.id] = sales
-        .filter(s => s.unitId === unit.id)
+        .filter((s) => s.unitId === unit.id)
         .reduce((sum, s) => sum + Number(s.total), 0);
     });
 
-    // Keep only units that have at least 1 sale across all teams
-    const validUnits = units.filter(u => unitTotalsMap[u.id] > 0);
+    // Remove units where all teams have 0
+    const validUnits = units.filter((u) => unitTotalsMap[u.id] > 0);
 
     // Build team performance
-    const teamPerformance = teams.map(team => {
-      const counts = validUnits.map(unit => ({
+    let teamPerformance = teams.map((team) => {
+
+      const counts = validUnits.map((unit) => ({
         unitId: unit.id,
         name: unit.name,
         count: salesMap[team.id]?.[unit.id] || 0
@@ -148,8 +157,11 @@ export const readAllTeamPerformanceService = async (monthYear) => {
       };
     });
 
-    // Build filtered unit totals
-    const unitTotals = validUnits.map(unit => ({
+    // ✅ Remove teams with total = 0
+    teamPerformance = teamPerformance.filter(team => team.total > 0);
+
+    // Build unit totals
+    const unitTotals = validUnits.map((unit) => ({
       unitId: unit.id,
       name: unit.name,
       total: unitTotalsMap[unit.id]
