@@ -12,7 +12,7 @@ import { readAllPipeline } from "../services/pipelineServices";
 import DeletePipeline from "../components/Pipeline/DeletePipeline";
 import { readAllGrm } from "../services/teamServices";
 import { selectReadAllVariant } from "../services/variantServices";
-import {getCurrentMonthYear} from "../utils/tools";
+import { getCurrentMonthYear } from "../utils/tools";
 import { exportToWord } from "../utils/ExportToWord";
 
 
@@ -39,6 +39,9 @@ const buildExportSubtitle = ({ selectedMonth, search, status, grm, model }) => {
 };
 
 export default function Pipeline() {
+
+    const [isLoading, setIsLoading] = useState(false);
+
     const PAGE_SIZE = 10;
     const STATUS_OPTIONS = [
         { value: "All Statuses", name: "All Statuses" },
@@ -63,7 +66,6 @@ export default function Pipeline() {
         forRelease: 0,
         bankApproval: 0,
     });
-    const [isLoading, setIsLoading] = useState(false);
 
     const [showCreate, setshowCreate] = useState(false);
     const [showUpdate, setShowUpdate] = useState(false);
@@ -98,83 +100,45 @@ export default function Pipeline() {
     }
 
     const loadTable = async (page = currentPage, activeFilters = appliedFilters) => {
-        setIsLoading(true);
-        const { success, message, data: pipelines = [], pagination: paginationData, totals: totalsData } = await readAllPipeline({
-            page,
-            limit: PAGE_SIZE,
-            month: selectedMonth,
-            search: activeFilters.search,
-            status: activeFilters.status,
-            grm: activeFilters.grm,
-            model: activeFilters.model,
-        });
-
-        if (success) {
-            setData(pipelines);
-            setPagination(paginationData ?? {
-                totalItems: 0,
-                totalPages: 0,
-                currentPage: page,
-                pageSize: PAGE_SIZE,
-            });
-            setTotals(totalsData ?? {
-                entries: paginationData?.totalItems ?? 0,
-                sold: 0,
-                forRelease: 0,
-                bankApproval: 0,
-            });
-            setTotalPages(paginationData?.totalPages ?? 0);
-            setCurrentPage(paginationData?.currentPage ?? page);
-            setIsLoading(false);
-            return;
-        }
-
-        setIsLoading(false);
-        console.error(message);
-    }
-
-    useEffect(() => {
         try {
-            queueMicrotask(() => {
-                loadTable(currentPage, appliedFilters);
-            })
+            setIsLoading(true);
+            const { success, message, data: pipelines = [], pagination: paginationData, totals: totalsData } = await readAllPipeline({
+                page,
+                limit: PAGE_SIZE,
+                month: selectedMonth,
+                search: activeFilters.search,
+                status: activeFilters.status,
+                grm: activeFilters.grm,
+                model: activeFilters.model,
+            });
+
+            if (success) {
+                setData(pipelines);
+                setPagination(paginationData ?? {
+                    totalItems: 0,
+                    totalPages: 0,
+                    currentPage: page,
+                    pageSize: PAGE_SIZE,
+                });
+                setTotals(totalsData ?? {
+                    entries: paginationData?.totalItems ?? 0,
+                    sold: 0,
+                    forRelease: 0,
+                    bankApproval: 0,
+                });
+                setTotalPages(paginationData?.totalPages ?? 0);
+                setCurrentPage(paginationData?.currentPage ?? page);
+                setIsLoading(false);
+                return;
+            }
+
+            console.error(message);
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsLoading(false);
         }
-    }, [currentPage, appliedFilters, selectedMonth]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedMonth]);
-
-    useEffect(() => {
-        const loadFilterOptions = async () => {
-            const [{ success: grmSuccess, message: grmMessage, grms = [] }, { success: modelSuccess, message: modelMessage, variants = [] }] = await Promise.all([
-                readAllGrm(),
-                selectReadAllVariant()
-            ]);
-
-            if (grmSuccess) {
-                setGrmOptions([
-                    { value: "All GRMs", name: "All GRMs" },
-                    ...grms.map((grm) => ({ value: grm.name, name: grm.name }))
-                ]);
-            } else {
-                console.error(grmMessage);
-            }
-
-            if (modelSuccess) {
-                setModelOptions([
-                    { value: "All Models", name: "All Models" },
-                    ...variants.map((variant) => ({ value: variant.name, name: variant.name }))
-                ]);
-            } else {
-                console.error(modelMessage);
-            }
-        };
-
-        loadFilterOptions();
-    }, []);
+    }
 
     const handlePreviousPage = () => {
         if (currentPage <= 1) {
@@ -234,72 +198,125 @@ export default function Pipeline() {
     };
 
     const handleExport = async () => {
-        const { success, message, data: exportRows = [] } = await readAllPipeline({
-            page: 1,
-            limit: PAGE_SIZE,
-            exportAll: true,
-            month: selectedMonth,
-            search: appliedFilters.search,
-            status: appliedFilters.status,
-            grm: appliedFilters.grm,
-            model: appliedFilters.model,
-        });
-
-        if (!success) {
-            console.error(message);
-            toast.error(message || "Failed to export pipeline data.");
-            return;
-        }
-
-        if (exportRows.length === 0) {
-            toast.error("No pipeline data found for the selected filters.");
-            return;
-        }
-
-        const headers = [
-            "TARGET RELEASE",
-            "VARIANT",
-            "UNIT",
-            "COLOR",
-            "CS NUMBER",
-            "TRANSACTION",
-            "BANK",
-            "CLIENT",
-            "GRM",
-            "STATUS",
-            "REMARKS",
-            "MONTH START",
-        ];
-
-        const rows = exportRows.map((sale) => ([
-            formatExportValue(sale?.targetReleased),
-            formatExportValue(sale?.unit?.variant?.name),
-            formatExportValue(sale?.unit?.name),
-            formatExportValue(sale?.color),
-            formatExportValue(sale?.csNumber),
-            formatExportValue(sale?.transaction),
-            formatExportValue(sale?.bank),
-            formatExportValue(sale?.client),
-            formatExportValue(sale?.team?.teamLeader),
-            formatExportValue(sale?.status),
-            formatExportValue(sale?.remarks),
-            formatExportValue(sale?.monthStart),
-        ]));
-
-        await exportToWord({
-            title: "Pipeline Report",
-            subtitle: buildExportSubtitle({
-                selectedMonth,
+        try {
+            setIsLoading(true);
+            const { success, message, data: exportRows = [] } = await readAllPipeline({
+                page: 1,
+                limit: PAGE_SIZE,
+                exportAll: true,
+                month: selectedMonth,
                 search: appliedFilters.search,
                 status: appliedFilters.status,
                 grm: appliedFilters.grm,
                 model: appliedFilters.model,
-            }),
-            headers,
-            rows,
-            fileName: `Pipeline_Report_${selectedMonth || "all"}`
-        });
+            });
+
+            if (!success) {
+                console.error(message);
+                toast.error(message || "Failed to export pipeline data.");
+                return;
+            }
+
+            if (exportRows.length === 0) {
+                toast.error("No pipeline data found for the selected filters.");
+                return;
+            }
+
+            const headers = [
+                "TARGET RELEASE",
+                "VARIANT",
+                "UNIT",
+                "COLOR",
+                "CS NUMBER",
+                "TRANSACTION",
+                "BANK",
+                "CLIENT",
+                "GRM",
+                "STATUS",
+                "REMARKS",
+                "MONTH START",
+            ];
+
+            const rows = exportRows.map((sale) => ([
+                formatExportValue(sale?.targetReleased),
+                formatExportValue(sale?.unit?.variant?.name),
+                formatExportValue(sale?.unit?.name),
+                formatExportValue(sale?.color),
+                formatExportValue(sale?.csNumber),
+                formatExportValue(sale?.transaction),
+                formatExportValue(sale?.bank),
+                formatExportValue(sale?.client),
+                formatExportValue(sale?.team?.teamLeader),
+                formatExportValue(sale?.status),
+                formatExportValue(sale?.remarks),
+                formatExportValue(sale?.monthStart),
+            ]));
+
+            await exportToWord({
+                title: "Pipeline Report",
+                subtitle: buildExportSubtitle({
+                    selectedMonth,
+                    search: appliedFilters.search,
+                    status: appliedFilters.status,
+                    grm: appliedFilters.grm,
+                    model: appliedFilters.model,
+                }),
+                headers,
+                rows,
+                fileName: `Pipeline_Report_${selectedMonth || "all"}`
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    useEffect(() => {
+        queueMicrotask(() => {
+            loadTable(currentPage, appliedFilters);
+        })
+    }, [currentPage, appliedFilters, selectedMonth]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedMonth]);
+
+    useEffect(() => {
+        try {
+            setIsLoading(true);
+            const loadFilterOptions = async () => {
+                const [{ success: grmSuccess, message: grmMessage, grms = [] }, { success: modelSuccess, message: modelMessage, variants = [] }] = await Promise.all([
+                    readAllGrm(),
+                    selectReadAllVariant()
+                ]);
+
+                if (grmSuccess) {
+                    setGrmOptions([
+                        { value: "All GRMs", name: "All GRMs" },
+                        ...grms.map((grm) => ({ value: grm.name, name: grm.name }))
+                    ]);
+                } else {
+                    console.error(grmMessage);
+                }
+
+                if (modelSuccess) {
+                    setModelOptions([
+                        { value: "All Models", name: "All Models" },
+                        ...variants.map((variant) => ({ value: variant.name, name: variant.name }))
+                    ]);
+                } else {
+                    console.error(modelMessage);
+                }
+            };
+
+            loadFilterOptions();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -313,7 +330,11 @@ export default function Pipeline() {
                         <PageSubTitle>Operation transaction tracking management</PageSubTitle>
                     </div>
                     <div className="flex gap-4">
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport} disabled={isLoading}>
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
+                            disabled={isLoading}
+                            onClick={handleExport}
+                        >
                             <FileDown size={16} /> Export
                         </button>
                         <button
@@ -322,6 +343,30 @@ export default function Pipeline() {
                         >
                             <Plus size={16} /> Add Entry
                         </button>
+                    </div>
+                </div>
+
+                {/* totals */}
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Total Entries</p>
+                        <h2 className="font-bold">{totals?.entries}</h2>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Sold</p>
+                        <h2 className="font-bold text-green-600">{totals?.sold}</h2>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">For Release</p>
+                        <h2 className="font-bold text-blue-600">{totals?.forRelease}</h2>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Bank Approval</p>
+                        <h2 className="font-bold text-nissan-red">{totals?.bankApproval}</h2>
                     </div>
                 </div>
 
@@ -371,7 +416,7 @@ export default function Pipeline() {
                             options={modelOptions}
                             onChange={handleFilterChange}
                         />
-                                                <Input
+                        <Input
                             label="Filter by Month"
                             type="month"
                             name="month"
@@ -483,30 +528,6 @@ export default function Pipeline() {
                                 Next
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                {/* totals */}
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Entries</p>
-                        <h2 className="font-bold">{totals?.entries}</h2>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Sold</p>
-                        <h2 className="font-bold text-green-600">{totals?.sold}</h2>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">For Release</p>
-                        <h2 className="font-bold text-blue-600">{totals?.forRelease}</h2>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Bank Approval</p>
-                        <h2 className="font-bold text-nissan-red">{totals?.bankApproval}</h2>
                     </div>
                 </div>
             </div>

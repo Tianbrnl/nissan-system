@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect } from "react";
 import { useForm } from "../../hooks/form";
 import Input from "../ui/Input";
@@ -64,10 +65,8 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
         try {
             const load = async () => {
                 const { success, message, pipeline } = await readOnePipeline(pipelineId);
-
                 if (success) {
                     const p = pipeline.pipelines[0];
-
                     setFormData({
                         targetReleased: cleanDate(p.targetReleased),
                         variant: pipeline.variantId || "",
@@ -133,19 +132,18 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
     useEffect(() => {
         try {
             const loadUnit = async () => {
-                if (formData.variant === '') return;
+                if (!formData.variant) return;
 
                 const { success, message, units } = await selectReadUnitVariant(formData.variant);
-                if (success) return setUnits(units);
-                console.error(message);
-            }
-            setFormData(prev => ({ ...prev, unit: '' }));
+                if (success) setUnits(units);
+                else console.error(message);
+            };
+
             loadUnit();
         } catch (error) {
             console.error(error);
         }
     }, [formData.variant]);
-
     return (
         <ModalBackground>
             <Modal maxWidth={800}>
@@ -237,7 +235,7 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
                             onChange={handleTeamChange}
                         />
                         <Select
-                            label="Member Name"
+                            label="NPM"
                             placeholder={formData?.grm ? "Select Member" : "Select GRM first"}
                             name="member"
                             options={members}
@@ -289,7 +287,7 @@ export default function UpdatePipeline({ pipelineId, onClose = () => { }, runAft
                             onChange={handleInputChange}
                         />
                         <Input
-                            label="Month Approved (As Applied)"
+                            label="Approved (As Applied)"
                             type="date"
                             name="approvedAppliedAt"
                             value={formData?.approvedAppliedAt}

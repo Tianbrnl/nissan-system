@@ -16,43 +16,58 @@ export default function ApplicationApproval() {
     const APPROVAL_TARGET = 40;
     const AVAILMENT_TARGET = 75;
 
+    const [isLoading, setIsLoading] = useState(false);
     const [monthYear, setMonthYear] = useState(getCurrentMonthYear);
 
     const [applicationsApprovalsData, setApplicationsApprovalsData] = useState([]);
     const [teamPerformanceData, setTeamPerformanceData] = useState([]);
 
     useEffect(() => {
-        const loadApplicationsApprovals = async () => {
-            const formattedToYear = monthYear.substring(0, 4);
-            const { success, message, applicationsApprovals, totals } = await fetchApplicationsApprovals(formattedToYear);
-            
-            if (success) return setApplicationsApprovalsData({ applicationsApprovals, totals });
-            console.error(message);
+        try {
+            setIsLoading(true);
+            const loadApplicationsApprovals = async () => {
+                const formattedToYear = monthYear.substring(0, 4);
+                const { success, message, applicationsApprovals, totals } = await fetchApplicationsApprovals(formattedToYear);
+
+                if (success) return setApplicationsApprovalsData({ applicationsApprovals, totals });
+                console.error(message);
+            }
+            const loadTeamPerformance = async () => {
+                const { success, message, teamPerformance, totals } = await fetchTeamPerformance(monthYear);
+                if (success) return setTeamPerformanceData({ teams: teamPerformance, totals });
+                console.error(message);
+            }
+            loadApplicationsApprovals();
+            loadTeamPerformance();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
         }
-        const loadTeamPerformance = async () => {
-            const { success, message, teamPerformance, totals } = await fetchTeamPerformance(monthYear);
-            if (success) return setTeamPerformanceData({ teams: teamPerformance, totals });
-            console.error(message);
-        }
-        loadApplicationsApprovals();
-        loadTeamPerformance();
     }, [monthYear]);
 
     const handleExport = async () => {
-        const matrixTable = createApplicationsApprovalMatrixExport(applicationsApprovalsData, monthYear);
-        const teamPerformanceTable = createTeamPerformanceExport(
-            teamPerformanceData,
-            monthYear,
-            calculateApprovalRate,
-            calculateAvailmentRate
-        );
+        try {
+            setIsLoading(true);
+            const matrixTable = createApplicationsApprovalMatrixExport(applicationsApprovalsData, monthYear);
+            const teamPerformanceTable = createTeamPerformanceExport(
+                teamPerformanceData,
+                monthYear,
+                calculateApprovalRate,
+                calculateAvailmentRate
+            );
 
-        await exportToWord({
-            title: "Applications & Approvals Report",
-            subtitle: `Overall monthly matrix for ${monthYear.substring(0, 4)} and team performance for ${monthYear}`,
-            tables: [matrixTable, teamPerformanceTable],
-            fileName: `Applications_Approvals_Report_${monthYear}`
-        });
+            await exportToWord({
+                title: "Applications & Approvals Report",
+                subtitle: `Overall monthly matrix for ${monthYear.substring(0, 4)} and team performance for ${monthYear}`,
+                tables: [matrixTable, teamPerformanceTable],
+                fileName: `Applications_Approvals_Report_${monthYear}`
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -67,7 +82,11 @@ export default function ApplicationApproval() {
                         <PageSubTitle>Track and manage financing applications and approval rates</PageSubTitle>
                     </div>
                     <div className="flex gap-4">
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport}>
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
+                            disabled={isLoading}
+                            onClick={handleExport}
+                        >
                             <FileDown size={16} /> Export
                         </button>
                         <div className="w-50">

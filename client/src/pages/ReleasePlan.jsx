@@ -54,55 +54,56 @@ export default function ReleasePlan() {
     const [editMonth, setEditMonth] = useState(getTodayMonthString());
     const [groups, setGroups] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        const loadReleasePlan = async () => {
-            setIsLoading(true);
+        try {
+            const loadReleasePlan = async () => {
+                setIsLoading(true);
 
-            const [viewResponse, editResponse] = await Promise.all([
-                fetchReleasePlan(selectedDate),
-                fetchReleasePlan(monthValueToDate(editMonth))
-            ]);
+                const [viewResponse, editResponse] = await Promise.all([
+                    fetchReleasePlan(selectedDate),
+                    fetchReleasePlan(monthValueToDate(editMonth))
+                ]);
 
-            if (!viewResponse.success) {
-                console.error(viewResponse.message);
-                toast.error(viewResponse.message);
-                setGroups([]);
-                setIsLoading(false);
-                return;
-            }
+                if (!viewResponse.success) {
+                    console.error(viewResponse.message);
+                    toast.error(viewResponse.message);
+                    setGroups([]);
+                    setIsLoading(false);
+                    return;
+                }
 
-            if (!editResponse.success) {
-                console.error(editResponse.message);
-                toast.error(editResponse.message);
-                setGroups([]);
-                setIsLoading(false);
-                return;
-            }
+                if (!editResponse.success) {
+                    console.error(editResponse.message);
+                    toast.error(editResponse.message);
+                    setGroups([]);
+                    setIsLoading(false);
+                    return;
+                }
 
-            const viewGroups = mapApiGroups(viewResponse.data);
-            const editGroups = mapApiGroups(editResponse.data);
-            const editMonthEndByTeam = new Map(
-                editGroups.map((group) => [group.team, group.monthEndCommitment])
-            );
+                const viewGroups = mapApiGroups(viewResponse.data);
+                const editGroups = mapApiGroups(editResponse.data);
+                const editMonthEndByTeam = new Map(
+                    editGroups.map((group) => [group.team, group.monthEndCommitment])
+                );
 
-            setGroups(viewGroups.map((group) => ({
-                ...group,
-                monthEndCommitment: editMonthEndByTeam.get(group.team) ?? 0
-            })));
+                setGroups(viewGroups.map((group) => ({
+                    ...group,
+                    monthEndCommitment: editMonthEndByTeam.get(group.team) ?? 0
+                })));
+            };
+
+            loadReleasePlan();
+
+        } catch (error) {
+            console.error(error);
+        } finally {
             setIsLoading(false);
-        };
-
-        loadReleasePlan();
+        }
     }, [selectedDate, editMonth]);
 
     const handleDateChange = (event) => {
         setSelectedDate(event.target.value);
-    };
-
-    const handleEditMonthChange = (event) => {
-        setEditMonth(event.target.value);
     };
 
     const handleEditCommitment = (groupId, value) => {
@@ -116,70 +117,80 @@ export default function ReleasePlan() {
     };
 
     const handleSaveCommitments = async () => {
-        setIsSaving(true);
+        try {
+            setIsLoading(true);
 
-        const payload = groups.map((group) => ({
-            team: group.team,
-            actual: group.actual,
-            thisWeek: group.additionalThisWeek,
-            nextWeek: group.additionalNextWeek,
-            monthEnd: group.monthEndCommitment,
-        }));
+            const payload = groups.map((group) => ({
+                team: group.team,
+                actual: group.actual,
+                thisWeek: group.additionalThisWeek,
+                nextWeek: group.additionalNextWeek,
+                monthEnd: group.monthEndCommitment,
+            }));
 
-        const { success, message, data } = await updateReleasePlan({
-            date: monthValueToDate(editMonth),
-            groups: payload
-        });
+            const { success, message, data } = await updateReleasePlan({
+                date: monthValueToDate(editMonth),
+                groups: payload
+            });
 
-        setIsSaving(false);
+            if (!success) {
+                console.error(message);
+                toast.error(message);
+                return;
+            }
 
-        if (!success) {
-            console.error(message);
-            toast.error(message);
-            return;
+            const savedGroups = mapApiGroups(data);
+            const savedMonthEndByTeam = new Map(
+                savedGroups.map((group) => [group.team, group.monthEndCommitment])
+            );
+
+            setGroups((prev) => prev.map((group) => ({
+                ...group,
+                monthEndCommitment: savedMonthEndByTeam.get(group.team) ?? group.monthEndCommitment
+            })));
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
         }
-
-        const savedGroups = mapApiGroups(data);
-        const savedMonthEndByTeam = new Map(
-            savedGroups.map((group) => [group.team, group.monthEndCommitment])
-        );
-
-        setGroups((prev) => prev.map((group) => ({
-            ...group,
-            monthEndCommitment: savedMonthEndByTeam.get(group.team) ?? group.monthEndCommitment
-        })));
-        toast.success(`Release plan saved for ${editMonth}.`);
     };
 
     const totals = calculateTotals(groups);
 
     const handleExport = async () => {
-        const headers = ["GROUP", "ACTUAL", "ADDITIONAL (THIS WEEK)", "ADDITIONAL (NEXT WEEK)", "MONTH-END COMMITMENT", "VARIANCE"];
-        const rows = groups.map((group) => [
-            getTeamDisplayName(group.team),
-            group.actual,
-            group.additionalThisWeek,
-            group.additionalNextWeek,
-            group.monthEndCommitment,
-            Math.abs(group.actual - group.monthEndCommitment)
-        ]);
+        try {
+            setIsLoading(true);
+            const headers = ["GROUP", "ACTUAL", "ADDITIONAL (THIS WEEK)", "ADDITIONAL (NEXT WEEK)", "MONTH-END COMMITMENT", "VARIANCE"];
+            const rows = groups.map((group) => [
+                getTeamDisplayName(group.team),
+                group.actual,
+                group.additionalThisWeek,
+                group.additionalNextWeek,
+                group.monthEndCommitment,
+                Math.abs(group.actual - group.monthEndCommitment)
+            ]);
 
-        rows.push([
-            "TOTAL",
-            totals.actual,
-            totals.additionalThisWeek,
-            totals.additionalNextWeek,
-            totals.monthEndCommitment,
-            totals.variance
-        ]);
+            rows.push([
+                "TOTAL",
+                totals.actual,
+                totals.additionalThisWeek,
+                totals.additionalNextWeek,
+                totals.monthEndCommitment,
+                totals.variance
+            ]);
 
-        await exportToWord({
-            title: "Release Plan",
-            subtitle: `View date ${selectedDate} with editable commitments for ${editMonth}`,
-            headers,
-            rows,
-            fileName: `Release_Plan_Report_${selectedDate}_${editMonth}`
-        });
+            await exportToWord({
+                title: "Release Plan",
+                subtitle: `View date ${selectedDate} with editable commitments for ${editMonth}`,
+                headers,
+                rows,
+                fileName: `Release_Plan_Report_${selectedDate}_${editMonth}`
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -195,13 +206,39 @@ export default function ReleasePlan() {
                         <input
                             type="date"
                             value={selectedDate}
-                            onChange={handleDateChange}
                             className="px-4 py-2 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-nissan-red bg-white hover:bg-gray-50 font-medium transition-colors"
+                            onChange={handleDateChange}
                         />
-                        <button className="btn bg-nissan-red text-white rounded-xl" onClick={handleExport} disabled={isLoading}>
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
+                            disabled={isLoading}
+                            onClick={handleExport}
+                        >
                             <FileDown size={16} /> Export
                         </button>
 
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Total Actual</p>
+                        <h2 className="font-bold">{totals.actual}</h2>
+                        <p className="text-xs">Current completed releases</p>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Total Commitment</p>
+                        <h2 className="font-bold text-blue-600">{totals.monthEndCommitment}</h2>
+                        <p className="text-xs">month total commitment</p>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Total Variance</p>
+                        <h2 className={`font-bold ${totals.actual >= totals.monthEndCommitment ? "text-green-600" : "text-nissan-red"}`}>
+                            {totals.variance}
+                        </h2>
+                        <p className="text-xs">Total Variance</p>
                     </div>
                 </div>
 
@@ -221,15 +258,15 @@ export default function ReleasePlan() {
                                                 <Input
                                                     type="month"
                                                     value={editMonth}
-                                                    onChange={handleEditMonthChange}
+                                                    onChange={(e) => setEditMonth(e.target.value)}
                                                 />
                                                 <button
                                                     className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
                                                     onClick={handleSaveCommitments}
-                                                    disabled={isLoading || isSaving}
+                                                    disabled={isLoading}
                                                     title={`Save month-end commitments for ${editMonth}`}
                                                 >
-                                                    {isSaving ? "Saving..." : "Save"}
+                                                    {isLoading ? "Saving..." : "Save"}
                                                 </button>
                                             </div>
                                         </div>
@@ -289,28 +326,6 @@ export default function ReleasePlan() {
                                 </tr>
                             </tfoot>
                         </table>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Actual</p>
-                        <h2 className="font-bold">{totals.actual}</h2>
-                        <p className="text-xs">Current completed releases</p>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Commitment</p>
-                        <h2 className="font-bold text-blue-600">{totals.monthEndCommitment}</h2>
-                        <p className="text-xs">month total commitment</p>
-                    </div>
-
-                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Variance</p>
-                        <h2 className={`font-bold ${totals.actual >= totals.monthEndCommitment ? "text-green-600" : "text-nissan-red"}`}>
-                            {totals.variance}
-                        </h2>
-                        <p className="text-xs">Total Variance</p>
                     </div>
                 </div>
             </div>

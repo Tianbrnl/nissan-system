@@ -31,7 +31,7 @@ export function ModalHeader({
         <div className="flex gap-3">
             <div className="grow flex items-start gap-4">
                 {Icon &&
-                    <div className="bg-emerald-100 text-nissan-red p-2 rounded-lg">
+                    <div className="bg-nissan-red text-white p-2 rounded-lg">
                         <Icon />
                     </div>
                 }

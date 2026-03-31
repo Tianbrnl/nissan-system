@@ -11,6 +11,9 @@ import Input from "../components/ui/Input";
 import { exportToWord } from "../utils/ExportToWord";
 
 export default function VehicleSales() {
+
+    const [isLoading, setIsLoading] = useState(false);
+
     const today = new Date();
     const thisYear = today.getFullYear();
     const thisMonth = today.getMonth() + 1;
@@ -97,31 +100,40 @@ export default function VehicleSales() {
             load();
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsLoading(false);
         }
     }, [monthYear])
 
     const handleExport = async () => {
-        const unitHeaders = data[0]?.counts?.map((count) => count?.name ?? "-") ?? [];
-        const headers = ["TEAM", ...unitHeaders, "TOTAL"];
-        const rows = data.map((team) => [
-            team?.team ?? "-",
-            ...(team?.counts?.map((count) => count?.count ?? 0) ?? []),
-            team?.total ?? 0,
-        ]);
+        try {
+            setIsLoading(true);
+            const unitHeaders = data[0]?.counts?.map((count) => count?.name ?? "-") ?? [];
+            const headers = ["TEAM", ...unitHeaders, "TOTAL"];
+            const rows = data.map((team) => [
+                team?.team ?? "-",
+                ...(team?.counts?.map((count) => count?.count ?? 0) ?? []),
+                team?.total ?? 0,
+            ]);
 
-        rows.push([
-            "TOTAL",
-            ...unitTotals.map((unitTotal) => unitTotal?.total ?? 0),
-            unitTotals?.reduce((sum, num) => sum + (num?.total ?? 0), 0) ?? 0,
-        ]);
+            rows.push([
+                "TOTAL",
+                ...unitTotals.map((unitTotal) => unitTotal?.total ?? 0),
+                unitTotals?.reduce((sum, num) => sum + (num?.total ?? 0), 0) ?? 0,
+            ]);
 
-        await exportToWord({
-            title: `${monthYear} Performance per Group`,
-            subtitle: "Vehicle sales breakdown by team and model",
-            headers,
-            rows,
-            fileName: `Performance_Per_Group_${monthYear}`,
-        });
+            await exportToWord({
+                title: `${monthYear} Performance per Group`,
+                subtitle: "Vehicle sales breakdown by team and model",
+                headers,
+                rows,
+                fileName: `Performance_Per_Group_${monthYear}`
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -137,18 +149,18 @@ export default function VehicleSales() {
                     </div>
 
                     <div className="flex gap-3 items-center">
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
+                            disabled={isLoading}
+                            onClick={handleExport}
+                        >
+                            <FileDown size={16} /> Export
+                        </button>
                         <Input
                             type="month"
                             value={monthYear}
                             onChange={(e) => setMonthYear(e.target.value)}
                         />
-                        <button
-                            className="btn bg-nissan-red text-white rounded-xl disabled:opacity-60"
-                            onClick={handleExport}
-                            disabled={data.length === 0}
-                        >
-                            <FileDown size={16} /> Export
-                        </button>
                     </div>
                 </div>
 
