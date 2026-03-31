@@ -1,11 +1,11 @@
-import { FileDown } from "lucide-react";
+import { FileDown, Pen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import Sidemenu from "../components/Sidemenu";
+import { Modal, ModalBackground, ModalHeader } from "../components/ui/ui-modal";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { fetchReleasePlan, updateReleasePlan } from "../services/releaseServices";
 import { exportToWord } from "../utils/ExportToWord";
-import Input from "../components/ui/Input";
 
 const getTodayString = () => new Date().toISOString().split("T")[0];
 const getTodayMonthString = () => getTodayString().slice(0, 7);
@@ -17,6 +17,23 @@ const TEAM_LABELS = {
 };
 
 const getTeamDisplayName = (team) => TEAM_LABELS[team] || team;
+const formatMonthLabel = (monthValue) => {
+    if (!monthValue) {
+        return "No month selected";
+    }
+
+    const [year, month] = monthValue.split("-");
+    const date = new Date(Number(year), Number(month) - 1, 1);
+
+    if (Number.isNaN(date.getTime())) {
+        return monthValue;
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        year: "numeric",
+    }).format(date);
+};
 
 const calculateTotals = (groups) => {
     const totals = groups.reduce((acc, group) => {
@@ -55,6 +72,7 @@ export default function ReleasePlan() {
     const [groups, setGroups] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         const loadReleasePlan = async () => {
@@ -116,6 +134,11 @@ export default function ReleasePlan() {
     };
 
     const handleSaveCommitments = async () => {
+        if (!editMonth) {
+            toast.error("Please select a month before saving.");
+            return false;
+        }
+
         setIsSaving(true);
 
         const payload = groups.map((group) => ({
@@ -136,7 +159,7 @@ export default function ReleasePlan() {
         if (!success) {
             console.error(message);
             toast.error(message);
-            return;
+            return false;
         }
 
         const savedGroups = mapApiGroups(data);
@@ -149,6 +172,27 @@ export default function ReleasePlan() {
             monthEndCommitment: savedMonthEndByTeam.get(group.team) ?? group.monthEndCommitment
         })));
         toast.success(`Release plan saved for ${editMonth}.`);
+        return true;
+    };
+
+    const handleOpenEditModal = () => {
+        setIsEditModalOpen(true);
+    };
+
+    const handleCloseEditModal = () => {
+        if (isSaving) {
+            return;
+        }
+
+        setIsEditModalOpen(false);
+    };
+
+    const handleSaveFromModal = async () => {
+        const didSave = await handleSaveCommitments();
+
+        if (didSave) {
+            setIsEditModalOpen(false);
+        }
     };
 
     const totals = calculateTotals(groups);
@@ -217,21 +261,14 @@ export default function ReleasePlan() {
                                     <td className="rowFooter">
                                         <div className="flex items-center justify-between gap-2">
                                             <span>MONTH-END COMMITMENT</span>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    type="month"
-                                                    value={editMonth}
-                                                    onChange={handleEditMonthChange}
-                                                />
-                                                <button
-                                                    className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
-                                                    onClick={handleSaveCommitments}
-                                                    disabled={isLoading || isSaving}
-                                                    title={`Save month-end commitments for ${editMonth}`}
-                                                >
-                                                    {isSaving ? "Saving..." : "Save"}
-                                                </button>
-                                            </div>
+                                            <button
+                                                className="btn bg-blue-600 text-white rounded-xl disabled:opacity-60"
+                                                onClick={handleOpenEditModal}
+                                                disabled={isLoading}
+                                                title="Edit month-end commitments"
+                                            >
+                                               <Pen size={16} /> Edit
+                                            </button>
                                         </div>
                                     </td>
                                     <td className="varianceCol">VARIANCE</td>
@@ -254,15 +291,7 @@ export default function ReleasePlan() {
                                             <td>{group.actual}</td>
                                             <td>{group.additionalThisWeek}</td>
                                             <td>{group.additionalNextWeek}</td>
-                                            <td className="rowFooter">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={group.monthEndCommitment}
-                                                    onChange={(event) => handleEditCommitment(group.id, event.target.value)}
-                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-center"
-                                                />
-                                            </td>
+                                            <td className="rowFooter">{group.monthEndCommitment}</td>
                                             <td className={`varianceCol ${isBehind ? "text-nissan-red" : "text-green-600"}`}>
                                                 {variance}
                                             </td>
@@ -314,6 +343,108 @@ export default function ReleasePlan() {
                     </div>
                 </div>
             </div>
+
+            {isEditModalOpen && (
+                <ModalBackground>
+                    <Modal maxWidth={720}>
+                        <div className="space-y-6">
+                            <ModalHeader
+                                title="Edit Month-End Commitment"
+                                subTitle="Update the target month and commitment values for each group."
+                                onClose={handleCloseEditModal}
+                            />
+
+                            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+                                    Selected Month
+                                </p>
+                                <p className="mt-2 text-2xl font-bold text-nissan-red">
+                                    {formatMonthLabel(editMonth)}
+                                </p>
+                            </div>
+
+                            <div className="  space-y-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="release-plan-edit-month" className="text-sm font-semibold text-gray-700">
+                                        Commitment Month
+                                    </label>
+                                    <input
+                                        id="release-plan-edit-month"
+                                        type="month"
+                                        value={editMonth}
+                                        onChange={handleEditMonthChange}
+                                        className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-nissan-red"
+                                    />
+                                    {!editMonth && (
+                                        <p className="text-sm text-nissan-red">Please select a month to continue.</p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-3">
+                                    
+
+                                    <div className="max-h-[340px] space-y-3 overflow-y-auto pr-1">
+                                        {groups.map((group) => (
+                                            <div
+                                                key={group.id}
+                                                className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_180px] md:items-center"
+                                            >
+                                                <div>
+                                                    <p className="text-xs font-semibold text-gray-400">
+                                                        Group / Team
+                                                    </p>
+                                                    <p className="mt-1 text-base font-bold text-gray-900">
+                                                        {getTeamDisplayName(group.team)}
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <label htmlFor={`commitment-${group.id}`} className="text-sm font-semibold text-gray-700">
+                                                        Month-End Commitment
+                                                    </label>
+                                                    <input
+                                                        id={`commitment-${group.id}`}
+                                                        type="number"
+                                                        min="0"
+                                                        value={group.monthEndCommitment}
+                                                        onChange={(event) => handleEditCommitment(group.id, event.target.value)}
+                                                        className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-nissan-red"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {!groups.length && (
+                                            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
+                                                No groups available to edit for the selected view.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost rounded-xl"
+                                    onClick={handleCloseEditModal}
+                                    disabled={isSaving}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn rounded-xl bg-nissan-red text-white disabled:opacity-60"
+                                    onClick={handleSaveFromModal}
+                                    disabled={isSaving || !editMonth}
+                                >
+                                    {isSaving ? "Saving..." : "Save"}
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+                </ModalBackground>
+            )}
         </div>
     );
 }
