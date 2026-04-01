@@ -16,6 +16,20 @@ export const handleLogin = async (formData) => {
     }
 };
 
+// CHANGE PASSWORD
+export const handleChangePassword = async (formData) => {
+    try {
+        const response = await axios.put(`${API_URL}/api/user/changePassword`, formData, { withCredentials: true });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to change password'
+        };
+    }
+};
+
 // LOGOUT USER
 export const handleLogout = async () => {
     try {

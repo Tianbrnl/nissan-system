@@ -8,6 +8,7 @@ import Pipeline from "./pages/Pipeline"
 import ReleasePlan from "./pages/ReleasePlan"
 import Team from "./pages/Team"
 import ProtectedRoute from "./components/ProtectedRoute"
+import Settings from "./pages/Settings"
 
 function App() {
 
@@ -22,6 +23,7 @@ function App() {
       <Route path="/app/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
       <Route path="/app/release-plan" element={<ProtectedRoute><ReleasePlan /></ProtectedRoute>} />
       <Route path="/app/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+      <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

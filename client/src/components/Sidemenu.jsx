@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FileDown, FileText, GitBranch, LayoutDashboard, LogOut, Menu, SquareCheckBig, TrendingUp, Users, X } from "lucide-react";
+import { FileDown, FileText, GitBranch, LayoutDashboard, LogOut, Menu, Settings, SquareCheckBig, TrendingUp, Users, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { UserContext } from "../context/AuthProvider";
 import { handleLogout } from "../services/userServices";
@@ -49,6 +49,11 @@ export default function Sidemenu() {
             Icon: Users,
             path: '/app/team',
             name: 'Team',
+        },
+        {
+            Icon: Settings,
+            path: '/app/settings',
+            name: 'Settings',
         },
     ];
 

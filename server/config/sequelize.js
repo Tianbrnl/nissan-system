@@ -13,6 +13,14 @@ const sequelize = new Sequelize(
     }
 );
 
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Establishes a connection to the database and syncs the models.
+ * Prints a success message if the connection is established and the models are synced.
+ * Prints an error message if there is a problem connecting to the database.
+ * @async
+ */
+/*******  70e92675-9fa6-49e1-8a86-29378747aff9  *******/
 const connectToDatabase = async () => {
     try {
         await sequelize.authenticate();
