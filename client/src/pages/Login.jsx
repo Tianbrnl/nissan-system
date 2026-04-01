@@ -15,7 +15,6 @@ export default function Login() {
     const navigate = useNavigate();
 
     const { formData, handleInputChange } = useForm({
-        email: '',
         password: ''
     });
 
@@ -43,16 +42,6 @@ export default function Login() {
             <p className="text-gray-500">Automotive Sales Reporting System</p>
             <Modal>
                 <div className="flex flex-col gap-6">
-                    <h3 className="font-bold">Login</h3>
-                    <Input
-                        label="Email Address"
-                        placeholder="your.email@email.com"
-                        name="email"
-                        type="email"
-                        required={true}
-                        value={formData.email}
-                        onChange={handleInputChange}
-                    />
                     <Input
                         label="Password"
                         placeholder="Enter your password"
@@ -63,10 +52,10 @@ export default function Login() {
                         onChange={handleInputChange}
                     />
 
-                    {errorMessage && 
-                    <div className="flex-center rounded-xl bg-red-100 text-red-500 text-sm p-4">
-                        {errorMessage}
-                    </div>
+                    {errorMessage &&
+                        <div className="flex-center rounded-xl bg-red-100 text-red-500 text-sm p-4">
+                            {errorMessage}
+                        </div>
                     }
 
                     <ConfirmButton
@@ -74,9 +63,6 @@ export default function Login() {
                     >
                         Login
                     </ConfirmButton>
-                    <LinkButton>
-                        Forgot Password?
-                    </LinkButton>
                 </div>
             </Modal>
             <p className="text-gray-500">System accounts only. No self-registration available.</p>

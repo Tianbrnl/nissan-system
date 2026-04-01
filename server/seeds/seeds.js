@@ -6,11 +6,10 @@ const seeds = async () => {
         console.log('🌱 Seeding default account...');
 
         // Seed default admin if not exists
-        const existingUser = await Users.findOne({ where: { email: 'admin@nissan.com' } });
+        const existingUser = await Users.findOne();
         if (!existingUser) {
             const hashedPassword = await bcrypt.hash('Admin@12345', 10);
             await Users.create({
-                email: 'admin@nissan.com',
                 password: hashedPassword
             });
         } else {
