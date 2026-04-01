@@ -4,9 +4,9 @@ import { cookieOptions } from "../utils/cookie.js";
 // LOGIN USER
 export const userLoginController = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        console.log({ email, password });
-        const result = await userLoginService(email, password);
+        const { password } = req.body;
+        
+        const result = await userLoginService(password);
 
         if (!result.success) {
             return res.json(result)
