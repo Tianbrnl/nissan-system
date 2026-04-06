@@ -1,4 +1,4 @@
-import { createVariantService, readOneUnitService, selectReadAllUnitService, selectReadAllVariantService, updateUnitService, updateVariantService } from "../services/VariantServices.js";
+import { createVariantService, readOneUnitService, selectReadAllUnitService, selectReadAllVariantService, updateUnitService, updateVariantService } from "../services/variantServices.js";
 
 // CREATE VARIANT 
 export const createVariantController = async (req, res) => {
