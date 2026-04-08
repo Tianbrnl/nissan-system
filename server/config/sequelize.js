@@ -1,8 +1,6 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
-import './models/User.js';
-import './models/Team.js';
-import './models/Pipeline.js';
+
 dotenv.config();
 
 const sequelize = new Sequelize(
