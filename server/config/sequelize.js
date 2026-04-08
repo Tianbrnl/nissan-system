@@ -53,6 +53,7 @@ const connectToDatabase = async () => {
     try {
         console.log("Database env summary:", connectionSummary);
         await sequelize.authenticate();
+        console.log("Loaded models:", Object.keys(sequelize.models));
         await sequelize.sync();
         console.log("Database connection has been established successfully. Models are synced.");
     } catch (error) {
