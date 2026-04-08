@@ -20,19 +20,25 @@ const app = express();
 const port = process.env.PORT || 8001;
 
 const allowedOrigins = [
-    "http://localhost:5173",
-    "https://nissan-system.vercel.app"
+  'http://localhost:5173',
+  'https://nissan-system.vercel.app',
 ];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error(`CORS not allowed for origin: ${origin}`));
-    },
-    credentials: true
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    if (/^https:\/\/nissan-system.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS not allowed for origin: ${origin}`));
+  },
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -40,7 +46,7 @@ app.use(cookieParser());
 
 // TEST
 app.get('/', (req, res) => {
-    res.send("API Working");
+  res.send("API Working");
 });
 
 app.use('/api/user', userRouter);
@@ -54,22 +60,22 @@ app.use('/api/applicationsApprovals', applicationsApprovalsRouter);
 
 // START SERVER
 const startServer = async () => {
-    try {
-        await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-        if (process.env.SEED_DATA === 'true') {
-            console.log('🌱 Running seed data...');
-            await seeds();
-        }
-
-        await ensureTeamManagementSchema();
-
-        app.listen(port, () => {
-            console.log(`Server running on PORT: ${port}`);
-        });
-    } catch (error) {
-        console.error("Error connecting to the database:", error);
+    if (process.env.SEED_DATA === 'true') {
+      console.log('🌱 Running seed data...');
+      await seeds();
     }
+
+    await ensureTeamManagementSchema();
+
+    app.listen(port, () => {
+      console.log(`Server running on PORT: ${port}`);
+    });
+  } catch (error) {
+    console.error("Error connecting to the database:", error);
+  }
 };
 
 startServer();
