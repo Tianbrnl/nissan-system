@@ -13,7 +13,9 @@ import releaseRouter from "./routes/releaseRoutes.js";
 import applicationsApprovalsRouter from './routes/applicationsApprovalsRoutes.js';
 import { ensureTeamManagementSchema } from './utils/teamSchema.js';
 import seeds from './seeds/seeds.js';
-
+import './models/User.js';
+import './models/Team.js';
+import './models/Pipeline.js';
 dotenv.config();
 
 const app = express();
