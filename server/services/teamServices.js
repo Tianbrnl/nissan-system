@@ -2,6 +2,7 @@ import Teams from "../models/Team.js";
 import { Pipelines, TeamMembers } from "../models/index.js";
 import { sequelize } from "../config/sequelize.js";
 import { capitalizeEachWord, removeUnnecessarySpaces } from "../utils/format.js";
+import { Op } from "sequelize";
 
 const normalizeMemberPayload = (members = []) => {
     if (!Array.isArray(members)) {
@@ -64,7 +65,30 @@ const formatTeamSummary = (team) => {
     };
 };
 
-const buildTeamInclude = () => ([
+const getMonthDateRange = (monthYear) => {
+    if (!monthYear || !/^\d{4}-\d{2}$/.test(monthYear)) {
+        return null;
+    }
+
+    const [year, month] = monthYear.split("-").map(Number);
+
+    if (!year || !month || month < 1 || month > 12) {
+        return null;
+    }
+
+    const monthStart = new Date(Date.UTC(year, month - 1, 1));
+    const monthEnd = new Date(Date.UTC(year, month, 0));
+
+    return {
+        monthStart: monthStart.toISOString().slice(0, 10),
+        monthEnd: monthEnd.toISOString().slice(0, 10)
+    };
+};
+
+const buildTeamInclude = (monthYear) => {
+    const monthDateRange = getMonthDateRange(monthYear);
+
+    return [
     {
         model: TeamMembers,
         as: "members",
@@ -75,11 +99,21 @@ const buildTeamInclude = () => ([
                 model: Pipelines,
                 as: "pipelines",
                 attributes: ["id"],
-                required: false
+                required: false,
+                ...(monthDateRange
+                    ? {
+                        where: {
+                            targetReleased: {
+                                [Op.between]: [monthDateRange.monthStart, monthDateRange.monthEnd]
+                            }
+                        }
+                    }
+                    : {})
             }
         ]
     }
-]);
+];
+};
 
 // CREARE TEAM
 export const createTeamService = async (teamCode, teamLeader, members = []) => {
@@ -165,11 +199,11 @@ export const readOneTeamService = async (teamId) => {
 }
 
 // READ ALL TEAM
-export const readAllTeamService = async () => {
+export const readAllTeamService = async (monthYear) => {
     try {
         const teams = await Teams.findAll({
             attributes: ['id', 'teamCode', 'teamLeader'],
-            include: buildTeamInclude(),
+            include: buildTeamInclude(monthYear),
             order: [
                 ['teamCode', 'ASC'],
                 [{ model: TeamMembers, as: 'members' }, 'memberName', 'ASC']
