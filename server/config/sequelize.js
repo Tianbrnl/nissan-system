@@ -3,16 +3,43 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-    process.env.MYSQLDATABASE,
-    process.env.MYSQLUSER,
-    process.env.MYSQLPASSWOR,
-    {
-        host: process.env.MYSQLHOST,
-        port: process.env.MYSQLPORT,
-        dialect: 'mysql'
-    }
-);
+const databaseUrl =
+    process.env.MYSQL_URL ||
+    process.env.DATABASE_URL ||
+    process.env.MYSQL_PUBLIC_URL ||
+    null;
+
+const connectionSummary = {
+    usingUrl: Boolean(databaseUrl),
+    host: process.env.MYSQLHOST || null,
+    port: process.env.MYSQLPORT || null,
+    database: process.env.MYSQLDATABASE || null,
+    user: process.env.MYSQLUSER || null,
+    hasPassword: Boolean(process.env.MYSQLPASSWORD),
+};
+
+const sequelize = databaseUrl
+    ? new Sequelize(databaseUrl, {
+        dialect: "mysql",
+        logging: false,
+        dialectOptions: {
+            connectTimeout: 10000,
+        },
+    })
+    : new Sequelize(
+        process.env.MYSQLDATABASE,
+        process.env.MYSQLUSER,
+        process.env.MYSQLPASSWORD,
+        {
+            host: process.env.MYSQLHOST,
+            port: Number(process.env.MYSQLPORT || 3306),
+            dialect: "mysql",
+            logging: false,
+            dialectOptions: {
+                connectTimeout: 10000,
+            },
+        }
+    );
 
 /*************  ✨ Windsurf Command ⭐  *************/
 /**
@@ -24,12 +51,14 @@ const sequelize = new Sequelize(
 /*******  70e92675-9fa6-49e1-8a86-29378747aff9  *******/
 const connectToDatabase = async () => {
     try {
+        console.log("Database env summary:", connectionSummary);
         await sequelize.authenticate();
         await sequelize.sync();
-        console.log('Database connection has been established successfully. Models are synced.');
+        console.log("Database connection has been established successfully. Models are synced.");
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        console.error("Unable to connect to the database:", error);
+        throw error;
     }
-}
+};
 
 export { sequelize, connectToDatabase };

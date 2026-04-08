@@ -4,6 +4,7 @@ import Pipelines from "./Pipeline.js";
 import Variants from "./Variant.js";
 import Units from "./Unit.js";
 import ReleasePlanCommitments from "./ReleasePlanCommitment.js";
+import Users from "./User.js";
 
 Variants.hasMany(Units, {
     foreignKey: 'variantId',
@@ -54,4 +55,4 @@ Pipelines.belongsTo(TeamMembers, {
     as: "member",
 });
 
-export { Teams, TeamMembers, Pipelines, Units, Variants, ReleasePlanCommitments };
+export { Teams, TeamMembers, Pipelines, Units, Variants, ReleasePlanCommitments, Users };

@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { connectToDatabase } from './config/sequelize.js';
+import './models/index.js';
+import './models/User.js';
 import userRouter from './routes/userRoutes.js';
 import teamRouter from './routes/teamRoutes.js';
 import pipelineRouter from './routes/pipelineRoutes.js';
@@ -79,7 +81,8 @@ const startServer = async () => {
       console.log(`Server running on PORT: ${port}`);
     });
   } catch (error) {
-    console.error("Error connecting to the database:", error);
+    console.error("Startup aborted because the database is unavailable:", error);
+    process.exit(1);
   }
 };
 
