@@ -1,10 +1,4 @@
 import { Sequelize } from "sequelize";
-import dotenv from "dotenv";
-
-// Load .env only for local development, never on Railway
-if (!process.env.RAILWAY_ENVIRONMENT_NAME && !process.env.RAILWAY_SERVICE_NAME) {
-  dotenv.config();
-}
 
 const databaseUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
 
@@ -23,8 +17,6 @@ const sequelize = new Sequelize(databaseUrl, {
 const connectToDatabase = async () => {
   try {
     console.log("MYSQL_URL loaded:", Boolean(databaseUrl));
-    console.log("Using Railway runtime:", Boolean(process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_SERVICE_NAME));
-
     await sequelize.authenticate();
     console.log("Database connection has been established successfully.");
   } catch (error) {
