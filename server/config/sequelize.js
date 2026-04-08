@@ -1,7 +1,8 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
-
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const databaseUrl = process.env.MYSQL_URL;
 
