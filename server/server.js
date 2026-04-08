@@ -21,7 +21,9 @@ import applicationsApprovalsRouter from './routes/applicationsApprovalsRoutes.js
 import { ensureTeamManagementSchema } from './utils/teamSchema.js';
 import seeds from './seeds/seeds.js';
 
-dotenv.config();
+if (!process.env.RAILWAY_ENVIRONMENT_NAME && !process.env.RAILWAY_SERVICE_NAME) {
+  dotenv.config();
+}
 
 const app = express();
 const port = process.env.PORT || 8001;
@@ -53,9 +55,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 app.use(express.json());
-app.use(cookieParser()); 
+app.use(cookieParser());
 
-// TEST
 app.get('/', (req, res) => {
   res.send("API Working");
 });
@@ -69,7 +70,6 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/release', releaseRouter);
 app.use('/api/applicationsApprovals', applicationsApprovalsRouter);
 
-// START SERVER
 const startServer = async () => {
   try {
     await connectToDatabase();
