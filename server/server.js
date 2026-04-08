@@ -19,15 +19,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8001;
 
-app.use(express.json());
-app.use(cookieParser());
-
-const allowedOrigins = new Set([
-  'http://localhost:5173',
-  'https://nissan-system.vercel.app',
-]);
-
-const allowedVercelPreviewPattern = /^https:\/\/nissan-system(?:-[a-z0-9-]+)?\.vercel\.app$/i;
+const allowedOrigins = new Set(
+  (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
 
 const corsOptions = {
   origin(origin, callback) {
@@ -35,7 +32,7 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    if (allowedOrigins.has(origin) || allowedVercelPreviewPattern.test(origin)) {
+    if (allowedOrigins.has(origin)) {
       return callback(null, true);
     }
 
@@ -43,11 +40,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
 app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
+app.options('*', cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser());
 
 // TEST
 app.get('/', (req, res) => {
@@ -77,7 +76,6 @@ const startServer = async () => {
 
     app.listen(port, () => {
       console.log('CORS allowed origins:', [...allowedOrigins].join(', '));
-      console.log('CORS allowed Vercel previews:', allowedVercelPreviewPattern.toString());
       console.log(`Server running on PORT: ${port}`);
     });
   } catch (error) {
