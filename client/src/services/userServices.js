@@ -1,11 +1,9 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { authApi } from './api';
 
 // LOGIN 
 export const handleLogin = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/api/user/login`, formData, { withCredentials: true });
+        const response = await authApi.post('/api/user/login', formData);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -19,7 +17,7 @@ export const handleLogin = async (formData) => {
 // CHANGE PASSWORD
 export const handleChangePassword = async (formData) => {
     try {
-        const response = await axios.put(`${API_URL}/api/user/changePassword`, formData, { withCredentials: true });
+        const response = await authApi.put('/api/user/changePassword', formData);
         return response.data;
     } catch (error) {
         console.error(error);
@@ -33,7 +31,7 @@ export const handleChangePassword = async (formData) => {
 // LOGOUT USER
 export const handleLogout = async () => {
     try {
-        const response = await axios.get(`${API_URL}/api/user/logout`, { withCredentials: true });
+        const response = await authApi.get('/api/user/logout');
         return response.data;
 
     } catch (error) {
@@ -48,7 +46,7 @@ export const handleLogout = async () => {
 // FETCH USER  
 export const fetchUser = async () => {
     try {
-        const response = await axios.get(`${API_URL}/api/user/fetchUser`, { withCredentials: true });
+        const response = await authApi.get('/api/user/fetchUser');
         return response.data;
     } catch (error) {
         console.error(error);

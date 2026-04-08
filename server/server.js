@@ -19,25 +19,38 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8001;
 
-const allowedOrigins = [
-    "http://localhost:5173",
-    "https://nissan-system.vercel.app"
-];
+const allowedOrigins = new Set(
+  (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
 
-app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        process.env.CLIENT_URL
-    ],
-    credentials: true
-}));
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
 
+    if (allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS not allowed for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
 // TEST
 app.get('/', (req, res) => {
-    res.send("API Working");
+  res.send("API Working");
 });
 
 app.use('/api/user', userRouter);
@@ -51,22 +64,23 @@ app.use('/api/applicationsApprovals', applicationsApprovalsRouter);
 
 // START SERVER
 const startServer = async () => {
-    try {
-        await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-        if (process.env.SEED_DATA === 'true') {
-            console.log('🌱 Running seed data...');
-            await seeds();
-        }
-
-        await ensureTeamManagementSchema();
-
-        app.listen(port, () => {
-            console.log(`Server running on PORT: ${port}`);
-        });
-    } catch (error) {
-        console.error("Error connecting to the database:", error);
+    if (process.env.SEED_DATA === 'true') {
+      console.log('🌱 Running seed data...');
+      await seeds();
     }
+
+    await ensureTeamManagementSchema();
+
+    app.listen(port, () => {
+      console.log('CORS allowed origins:', [...allowedOrigins].join(', '));
+      console.log(`Server running on PORT: ${port}`);
+    });
+  } catch (error) {
+    console.error("Error connecting to the database:", error);
+  }
 };
 
 startServer();
