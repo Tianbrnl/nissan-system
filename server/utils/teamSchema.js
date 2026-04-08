@@ -4,7 +4,13 @@ import { TeamMembers } from "../models/index.js";
 
 export const ensureTeamManagementSchema = async () => {
     const queryInterface = sequelize.getQueryInterface();
-    const pipelineTable = await queryInterface.describeTable("pipelines");
+    let pipelineTable = {};
+
+    try {
+        pipelineTable = await queryInterface.describeTable("pipelines");
+    } catch (error) {
+        console.log('Pipelines table not found during schema check. It should be created by sequelize.sync().');
+    }
 
     await TeamMembers.sync();
 
