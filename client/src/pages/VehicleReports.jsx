@@ -302,10 +302,10 @@ export default function VehicleReports() {
 
                                                         </DropdownMenu.Item>
 
-                                                        <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md cursor-pointer">
+                                                        {/*<DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md cursor-pointer">
                                                             <Trash2 size={16} />
                                                             Delete
-                                                        </DropdownMenu.Item>
+                                                        </DropdownMenu.Item>*/}
                                                     </DropdownMenu.Content>
                                                 </DropdownMenu.Portal>
                                             </DropdownMenu.Root>

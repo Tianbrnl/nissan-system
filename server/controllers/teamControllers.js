@@ -56,7 +56,7 @@ export const readOneTeamController = async (req, res) => {
 // READ ALL TEAM 
 export const readAllTeamController = async (req, res) => {
     try {
-        const result = await readAllTeamService();
+        const result = await readAllTeamService(req.query.monthYear);
 
         return res.json(result);
 

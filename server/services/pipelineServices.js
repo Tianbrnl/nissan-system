@@ -49,6 +49,34 @@ const shouldApplyNamedFilter = (value, allValueLabel) => {
     return value && value !== allValueLabel;
 };
 
+const normalizeOptionalDate = (value) => {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue || trimmedValue === "Invalid date" || trimmedValue === "0000-00-00") {
+        return null;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+        return null;
+    }
+
+    const parsedDate = new Date(`${trimmedValue}T00:00:00Z`);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+        return null;
+    }
+
+    return trimmedValue;
+};
+
 // CREATE PIPELINE
 export const createPipelineService = async (
     targetReleased,
@@ -71,8 +99,13 @@ export const createPipelineService = async (
     reservedAt
 ) => {
     try {
-        const normalizedTargetReleased = targetReleased?.trim() || null;
-        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
+        const normalizedTargetReleased = normalizeOptionalDate(targetReleased);
+        const normalizedMonthStart = normalizeOptionalDate(monthStart) || normalizedTargetReleased || null;
+        const normalizedAppliedAt = normalizeOptionalDate(appliedAt);
+        const normalizedApprovedAppliedAt = normalizeOptionalDate(approvedAppliedAt);
+        const normalizedApprovedNotAppliedAt = normalizeOptionalDate(approvedNotAppliedAt);
+        const normalizedAvailedAt = normalizeOptionalDate(availedAt);
+        const normalizedReservedAt = normalizeOptionalDate(reservedAt);
 
         if (
             !unit||
@@ -125,12 +158,12 @@ export const createPipelineService = async (
             status,
             monthStart: normalizedMonthStart,
             remarks,
-            appliedAt,
-            approvedAppliedAt,
-            approvedNotAppliedAt,
-            availedAt,
+            appliedAt: normalizedAppliedAt,
+            approvedAppliedAt: normalizedApprovedAppliedAt,
+            approvedNotAppliedAt: normalizedApprovedNotAppliedAt,
+            availedAt: normalizedAvailedAt,
             reservationAmount,
-            reservedAt
+            reservedAt: normalizedReservedAt
         });
 
         return {
@@ -396,8 +429,13 @@ export const updatePipelineService = async (
     reservedAt
 ) => {
     try {
-        const normalizedTargetReleased = targetReleased?.trim() || monthStart?.trim() || null;
-        const normalizedMonthStart = monthStart?.trim() || normalizedTargetReleased || null;
+        const normalizedTargetReleased = normalizeOptionalDate(targetReleased) || normalizeOptionalDate(monthStart) || null;
+        const normalizedMonthStart = normalizeOptionalDate(monthStart) || normalizedTargetReleased || null;
+        const normalizedAppliedAt = normalizeOptionalDate(appliedAt);
+        const normalizedApprovedAppliedAt = normalizeOptionalDate(approvedAppliedAt);
+        const normalizedApprovedNotAppliedAt = normalizeOptionalDate(approvedNotAppliedAt);
+        const normalizedAvailedAt = normalizeOptionalDate(availedAt);
+        const normalizedReservedAt = normalizeOptionalDate(reservedAt);
 
         if (
             !unit ||
@@ -446,12 +484,12 @@ export const updatePipelineService = async (
             status,
             monthStart: normalizedMonthStart,
             remarks,
-            appliedAt,
-            approvedAppliedAt,
-            approvedNotAppliedAt,
-            availedAt,
+            appliedAt: normalizedAppliedAt,
+            approvedAppliedAt: normalizedApprovedAppliedAt,
+            approvedNotAppliedAt: normalizedApprovedNotAppliedAt,
+            availedAt: normalizedAvailedAt,
             reservationAmount,
-            reservedAt
+            reservedAt: normalizedReservedAt
         }, {
             where: { id: pipelineId }
         });

@@ -17,9 +17,11 @@ export const createTeam = async (formData) => {
 };
 
 // READ ALL TEAM
-export const readAllTeam = async () => {
+export const readAllTeam = async (monthYear) => {
     try {
-        const response = await axios.get(`${API_URL}/api/team/readAll`);
+        const response = await axios.get(`${API_URL}/api/team/readAll`, {
+            params: { monthYear }
+        });
         return response.data;
     } catch (error) {
         console.error(error);

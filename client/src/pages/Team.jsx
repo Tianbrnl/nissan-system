@@ -8,6 +8,8 @@ import { useEffect } from "react";
 import { readAllTeam } from "../services/teamServices";
 import UpdateTeam from "../components/Team/UpdateTeam";
 import ViewTeamMembers from "../components/Team/ViewTeamMembers";
+import Input from "../components/ui/Input";
+import { getCurrentMonthYear } from "../utils/tools";
 
 
 export default function Team() {
@@ -21,6 +23,7 @@ export default function Team() {
 
     const [data, setData] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState(null);
+    const [monthYear, setMonthYear] = useState(getCurrentMonthYear);
 
     const handleEdit = (teamId) => {
         setTeamId(teamId);
@@ -38,7 +41,7 @@ export default function Team() {
     };
 
     const loadTable = async () => {
-        const { success, message, teams } = await readAllTeam();
+        const { success, message, teams } = await readAllTeam(monthYear);
         if (success) return setData(teams);
         console.error(message);
     };
@@ -51,7 +54,7 @@ export default function Team() {
         } catch (error) {
             console.log(error);
         }
-    }, []);
+    }, [monthYear]);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -65,12 +68,21 @@ export default function Team() {
                         <PageSubTitle>Manage sales teams and leaders</PageSubTitle>
                     </div>
 
-                    <button
-                        className="btn bg-nissan-red text-white rounded-xl"
-                        onClick={() => setShowAdd(true)}
-                    >
-                        <Plus size={16} /> Add Team
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="w-44">
+                            <Input
+                                type="month"
+                                value={monthYear}
+                                onChange={(e) => setMonthYear(e.target.value)}
+                            />
+                        </div>
+                        <button
+                            className="btn bg-nissan-red text-white rounded-xl"
+                            onClick={() => setShowAdd(true)}
+                        >
+                            <Plus size={16} /> Add Team
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
@@ -85,7 +97,7 @@ export default function Team() {
                         </p>
                     </div>
                     <div className="border border-gray-300 bg-nissan-red text-white rounded-xl p-4 space-y-2">
-                        <p className="text-sm">NMPs With No Release</p>
+                        <p className="text-sm">NMPs With No Release ({monthYear})</p>
                         <p className="mt-2 text-3xl font-semibold">
                             {data.reduce((total, team) => total + (team.noSalesCount || 0), 0)}
                         </p>
@@ -101,7 +113,7 @@ export default function Team() {
                                     <td>TEAM CODE</td>
                                     <td>GRM</td>
                                     <td>NMPs COUNT</td>
-                                    <td>NO RELEASE COUNT</td>
+                                    <td>NO RELEASE COUNT ({monthYear})</td>
                                     <td>ACTIONS</td>
                                 </tr>
                             </thead>
