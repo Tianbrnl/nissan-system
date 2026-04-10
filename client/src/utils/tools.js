@@ -18,7 +18,15 @@ export const generateYearMonths = () => {
 export const getMonthIndex = (value, year) => {
     if (!value) return -1;
 
-    const date = new Date(value);
+    let date;
+
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const [parsedYear, parsedMonth, parsedDay] = value.split("-").map(Number);
+        date = new Date(parsedYear, parsedMonth - 1, parsedDay);
+    } else {
+        date = new Date(value);
+    }
+
     if (Number.isNaN(date.getTime())) return -1;
 
     // Filter out dates not in the selected year
@@ -36,4 +44,3 @@ export const getCurrentMonthYear = () => {
     const month = String(now.getMonth() + 1).padStart(2, "0"); // 0-indexed months
     return `${year}-${month}`;
 };
-
