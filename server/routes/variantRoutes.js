@@ -1,5 +1,5 @@
 import express from 'express';
-import { createVariantController, readOneUnitController, selectReadAllUnitController, selectReadAllVariantController, updateUnitController, updateVariantController } from '../controllers/variantControllers.js';
+import { createVariantController, deleteUnitController, readOneUnitController, selectReadAllUnitController, selectReadAllVariantController, updateUnitController, updateVariantController } from '../controllers/variantControllers.js';
 
 const variantRouter = express.Router();
 
@@ -17,6 +17,9 @@ variantRouter.get('/unit/select/readAll/:variantId', selectReadAllUnitController
 
 // UPDATE UNIT
 variantRouter.put('/unit/update/:unitId', updateUnitController);
+
+// DELETE UNIT
+variantRouter.delete('/unit/delete/:unitId', deleteUnitController);
 
 // UPDATE VARIANT
 variantRouter.put('/update/:variantId', updateVariantController);

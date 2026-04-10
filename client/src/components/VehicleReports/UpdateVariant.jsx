@@ -5,12 +5,15 @@ import Select from "../ui/Select";
 import TagInput from "../ui/TagInput";
 import { Modal, ModalBackground, ModalFooter, ModalHeader } from "../ui/ui-modal";
 import { toast } from "react-toastify"
-import { selectReadAllVariant, updateVariant } from "../../services/variantServices";
+import { Trash2 } from "lucide-react";
+import { deleteUnit, selectReadAllVariant, selectReadUnitVariant, updateVariant } from "../../services/variantServices";
 import Input from "../ui/Input";
 
 export default function UpdateVariant({ onClose = () => { }, runAfter = () => { } }) {
 
     const [variants, setVariants] = useState([]);
+    const [existingUnits, setExistingUnits] = useState([]);
+    const [isDeletingUnitId, setIsDeletingUnitId] = useState(null);
 
     const { formData, setFormData, handleInputChange } = useForm({
         variantId: '',
@@ -31,6 +34,28 @@ export default function UpdateVariant({ onClose = () => { }, runAfter = () => { 
             console.log(error);
         }
     }
+
+    const handleDeleteUnit = async (unitId, unitName) => {
+        const confirmed = window.confirm(`Delete unit "${unitName}"?`);
+        if (!confirmed) return;
+
+        try {
+            setIsDeletingUnitId(unitId);
+            const { success, message } = await deleteUnit(unitId);
+
+            if (success) {
+                setExistingUnits(prev => prev.filter(unit => unit.value !== unitId));
+                runAfter();
+                return toast.success(message);
+            }
+
+            toast.error(message);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setIsDeletingUnitId(null);
+        }
+    };
 
     useEffect(() => {
         try {
@@ -56,6 +81,27 @@ export default function UpdateVariant({ onClose = () => { }, runAfter = () => { 
             name: variant || ""
         }));
     }, [formData.variantId, variants]);
+
+    useEffect(() => {
+        try {
+            const loadUnits = async () => {
+                if (!formData.variantId) {
+                    setExistingUnits([]);
+                    return;
+                }
+
+                const { success, message, units } = await selectReadUnitVariant(formData.variantId);
+                if (success) return setExistingUnits(units);
+
+                setExistingUnits([]);
+                console.error(message);
+            };
+
+            loadUnits();
+        } catch (error) {
+            console.log(error);
+        }
+    }, [formData.variantId]);
 
     return (
         <ModalBackground>
@@ -88,6 +134,35 @@ export default function UpdateVariant({ onClose = () => { }, runAfter = () => { 
                                 value={formData?.name}
                                 onChange={handleInputChange}
                             />
+
+                            <div className="space-y-2">
+                                <p className="input-label">Existing Units</p>
+                                {existingUnits.length > 0 ? (
+                                    <div className="max-h-60 overflow-auto space-y-2 pr-1">
+                                        {existingUnits.map((unit) => (
+                                            <div
+                                                key={unit.value}
+                                                className="flex items-center justify-between gap-3 rounded-xl border border-gray-300 px-3 py-2"
+                                            >
+                                                <p className="text-sm break-words">{unit.name}</p>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                                    disabled={isDeletingUnitId === unit.value}
+                                                    onClick={() => handleDeleteUnit(unit.value, unit.name)}
+                                                >
+                                                    <Trash2 size={16} />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-nissan-gray border border-dashed border-gray-300 rounded-xl px-3 py-4">
+                                        No units found for this variant yet.
+                                    </p>
+                                )}
+                            </div>
 
                             <TagInput
                                 label="New Units"

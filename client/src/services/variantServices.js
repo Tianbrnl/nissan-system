@@ -72,6 +72,20 @@ export const updateUnit = async (unitId, formData) => {
     }
 };
 
+// DELETE UNIT
+export const deleteUnit = async (unitId) => {
+    try {
+        const response = await axios.delete(`${API_URL}/api/variant/unit/delete/${unitId}`);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to delete unit'
+        };
+    }
+};
+
 // UPDATE VARIANT
 export const updateVariant = async (variantId, formData) => {
     try {
