@@ -95,18 +95,18 @@ export default function ViewMemberSalesSummary({
                                         <thead>
                                             <tr>
                                                 <td>MONTH</td>
-                                                <td>SOLD COUNT</td>
+                                                {(summary?.monthlyCounts || []).map((item) => (
+                                                    <td key={item.month}>{item.month}</td>
+                                                ))}
+                                                <td>TOTAL</td>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {(summary?.monthlyCounts || []).map((item) => (
-                                                <tr key={item.month}>
-                                                    <td className="font-medium">{item.month}</td>
-                                                    <td>{item.count}</td>
-                                                </tr>
-                                            ))}
                                             <tr className="bg-gray-50 font-semibold">
-                                                <td>Total</td>
+                                                <td>RELEASE COUNT</td>
+                                                {(summary?.monthlyCounts || []).map((item) => (
+                                                    <td key={item.month}>{item.count}</td>
+                                                ))}
                                                 <td>{summary?.totalSold ?? 0}</td>
                                             </tr>
                                         </tbody>
