@@ -36,6 +36,19 @@ const parseDashboardYear = (selectedYear) => {
     return parsedYear;
 };
 
+const paymentTermLabelMap = {
+    CASH: "Cash",
+    FINANCING: "Financing",
+    "BANK OP": "Bank OP",
+    "BANK PO": "Bank OP"
+};
+
+const dashboardReportDateExpression = Sequelize.fn(
+    "COALESCE",
+    Sequelize.col("targetReleased"),
+    Sequelize.col("monthStart")
+);
+
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotalService = async () => {
     try {
@@ -118,39 +131,47 @@ export const fetchDashboardTotalService = async () => {
 export const paymentTermDistributionService = async (monthYear) => {
     try {
         const { year: selectedYear, month: selectedMonth } = parseDashboardMonthYear(monthYear);
-        const monthFilter = {
-            [Op.and]: [
-                Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("monthStart")), selectedYear),
-                Sequelize.where(Sequelize.fn("MONTH", Sequelize.col("monthStart")), selectedMonth)
-            ]
+        const groupedTransactions = await Pipelines.findAll({
+            attributes: [
+                [Sequelize.fn("TRIM", Sequelize.col("transaction")), "transaction"],
+                [Sequelize.fn("COUNT", Sequelize.col("id")), "total"]
+            ],
+            where: {
+                transaction: {
+                    [Op.not]: null
+                },
+                [Op.and]: [
+                    Sequelize.where(Sequelize.fn("YEAR", dashboardReportDateExpression), selectedYear),
+                    Sequelize.where(Sequelize.fn("MONTH", dashboardReportDateExpression), selectedMonth)
+                ]
+            },
+            group: [Sequelize.fn("TRIM", Sequelize.col("transaction"))],
+            raw: true
+        });
+
+        const paymentTotals = {
+            Cash: 0,
+            Financing: 0,
+            "Bank OP": 0
         };
 
-        const cash = await Pipelines.count({
-            where: {
-                transaction: 'Cash',
-                ...monthFilter
-            }
-        });
+        groupedTransactions.forEach((item) => {
+            const rawTransaction = typeof item.transaction === "string" ? item.transaction.trim().toUpperCase() : "";
+            const normalizedTransaction = paymentTermLabelMap[rawTransaction];
 
-        const financing = await Pipelines.count({
-            where: {
-                transaction: 'Financing',
-                ...monthFilter
+            if (!normalizedTransaction) {
+                return;
             }
-        });
-        const bankOp = await Pipelines.count({
-            where: {
-                transaction: 'Bank OP',
-                ...monthFilter
-            }
+
+            paymentTotals[normalizedTransaction] += Number(item.total) || 0;
         });
 
         return {
             success: true,
             paymentTerm: [
-                { name: 'Cash', data: cash },
-                { name: 'Financing', data: financing },
-                { name: 'Bank OP', data: bankOp }
+                { name: 'Cash', data: paymentTotals.Cash },
+                { name: 'Financing', data: paymentTotals.Financing },
+                { name: 'Bank OP', data: paymentTotals["Bank OP"] }
             ],
             selectedYear,
             selectedMonth
