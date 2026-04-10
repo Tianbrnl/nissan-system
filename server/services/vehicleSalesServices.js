@@ -7,8 +7,6 @@ const reportDateExpression = Sequelize.fn(
   Sequelize.col("pipeline.monthStart")
 );
 
-const reservationDateExpression = Sequelize.col("pipeline.reservedAt");
-
 // vehicleSales report
 export const getVehicleSalesByUnitsMonthly = async () => {
   const result = await Pipelines.findAll({
@@ -56,28 +54,47 @@ export const getReservationByTeamMonthly = async () => {
     attributes: [
       "id",
       "teamId",
-      [reservationDateExpression, "reservedDate"],
+      "reservedAt",
       [Sequelize.literal("1"), "total"]
     ],
-    include: [
-      {
-        model: Teams,
-        attributes: ["id", "teamCode", "teamLeader"],
-        required: false
-      }
-    ],
     where: {
-      reservedAt: {
-        [Op.not]: null,
-        [Op.ne]: "0000-00-00"
-      }
+      [Op.and]: [
+        Sequelize.literal("teamId IS NOT NULL"),
+        Sequelize.literal("reservedAt IS NOT NULL"),
+        Sequelize.literal("reservedAt <> '0000-00-00'")
+      ]
     },
-    order: [[reservationDateExpression, "ASC"]]
+    order: [["reservedAt", "ASC"]],
+    raw: true
+  });
+
+  const teamIds = [...new Set(result.map((row) => row.teamId).filter(Boolean))];
+  const teams = teamIds.length
+    ? await Teams.findAll({
+        attributes: ["id", "teamCode", "teamLeader"],
+        where: {
+          id: teamIds
+        },
+        raw: true
+      })
+    : [];
+
+  const teamMap = new Map(teams.map((team) => [team.id, team]));
+  const data = result.map((row) => {
+    const team = teamMap.get(row.teamId) || null;
+
+    return {
+      ...row,
+      reservedDate: row.reservedAt,
+      teamCode: team?.teamCode ?? null,
+      teamLeader: team?.teamLeader ?? null,
+      team
+    };
   });
 
   return {
     success: true,
-    data: result
+    data
   };
 };
 
