@@ -1,4 +1,4 @@
-import { createVariantService, readOneUnitService, selectReadAllUnitService, selectReadAllVariantService, updateUnitService, updateVariantService } from "../services/variantServices.js";
+import { createVariantService, deleteUnitService, readOneUnitService, selectReadAllUnitService, selectReadAllVariantService, updateUnitService, updateVariantService } from "../services/variantServices.js";
 
 // CREATE VARIANT 
 export const createVariantController = async (req, res) => {
@@ -81,6 +81,24 @@ export const updateUnitController = async (req, res) => {
         const { unitId } = req.params;
         const { name } = req.body;
         const result = await updateUnitService(unitId, name);
+
+        return res.json(result);
+
+    } catch (error) {
+        console.error(error);
+
+        return res.json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+// DELETE UNIT
+export const deleteUnitController = async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const result = await deleteUnitService(unitId);
 
         return res.json(result);
 

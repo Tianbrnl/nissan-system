@@ -128,6 +128,33 @@ export const updateUnitService = async (unitId, name) => {
     }
 }
 
+// DELETE UNIT
+export const deleteUnitService = async (unitId) => {
+    try {
+
+        const deletedCount = await Units.destroy({
+            where: { id: unitId }
+        });
+
+        if (!deletedCount) {
+            return {
+                success: false,
+                message: "Unit not found."
+            };
+        }
+
+        return {
+            success: true,
+            message: "Unit deleted successfully"
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.message
+        };
+    }
+}
+
 // UPDATE VARIANT 
 export const updateVariantService = async (variantId, name, units) => {
     try {
