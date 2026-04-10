@@ -26,6 +26,8 @@ const normalizeMonthValue = (value) => {
 };
 
 const formatExportValue = (value) => value || "-";
+const getVariantName = (sale) => sale?.unit?.variant?.name || "-";
+const getUnitName = (sale) => sale?.unit?.name || "-";
 
 const buildExportSubtitle = ({ selectedMonth, search, status, grm, model }) => {
     const parts = [`Month: ${selectedMonth || "All"}`];
@@ -239,8 +241,8 @@ export default function Pipeline() {
 
             const rows = exportRows.map((sale) => ([
                 formatExportValue(sale?.targetReleased),
-                formatExportValue(sale?.unit?.variant?.name),
-                formatExportValue(sale?.unit?.name),
+                formatExportValue(getVariantName(sale)),
+                formatExportValue(getUnitName(sale)),
                 formatExportValue(sale?.color),
                 formatExportValue(sale?.csNumber),
                 formatExportValue(sale?.transaction),
@@ -301,9 +303,10 @@ export default function Pipeline() {
                 }
 
                 if (modelSuccess) {
+                    const safeVariants = variants.filter((variant) => variant?.name);
                     setModelOptions([
                         { value: "All Models", name: "All Models" },
-                        ...variants.map((variant) => ({ value: variant.name, name: variant.name }))
+                        ...safeVariants.map((variant) => ({ value: variant.name, name: variant.name }))
                     ]);
                 } else {
                     console.error(modelMessage);
@@ -459,8 +462,8 @@ export default function Pipeline() {
                                     <tr key={sale?.id}>
                                         <td>{((pagination.currentPage - 1) * pagination.pageSize) + index + 1}</td>
                                         <td>{sale?.targetReleased ? sale?.targetReleased : '-'}</td>
-                                        <td>{sale?.unit?.variant?.name ? sale?.unit?.variant?.name : '-'}</td>
-                                        <td>{sale?.unit.name ? sale?.unit.name : '-'}</td>
+                                        <td>{getVariantName(sale)}</td>
+                                        <td>{getUnitName(sale)}</td>
                                         <td>{sale?.color ? sale?.color : '-'}</td>
                                         <td>{sale?.csNumber ? sale?.csNumber : '-'}</td>
                                         <td>{sale?.transaction ? sale?.transaction : '-'}</td>
