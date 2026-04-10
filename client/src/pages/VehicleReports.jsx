@@ -86,13 +86,15 @@ const transformReservation = (data, year) => {
     data.forEach(item => {
         const teamInfo = item.team || item.Team;
         const teamId = item.teamId ?? teamInfo?.id;
+        const teamCode = teamInfo?.teamCode || item.teamCode;
+        const teamLeader = teamInfo?.teamLeader || item.teamLeader;
         const team =
-            teamInfo?.teamLeader ||
-            teamInfo?.teamName ||
-            teamInfo?.name ||
             item.teamName ||
-            teamInfo?.teamCode ||
-            item.teamCode ||
+            teamInfo?.teamName ||
+            (teamCode && teamLeader ? `${teamCode} - ${teamLeader}` : null) ||
+            teamInfo?.name ||
+            teamLeader ||
+            teamCode ||
             "Unknown";
         const monthIndex = getMonthIndex(item.reservedDate, year);
         const total = toNumber(item.total);
@@ -167,9 +169,9 @@ export default function VehicleReports() {
     };
 
     useEffect(() => {
-        try {
-            setIsLoading(true);
-            const loadReports = async () => {
+        const loadReports = async () => {
+            try {
+                setIsLoading(true);
                 const v = await fetchVehicleSalesReport();
                 const p = await fetchPaymentTermReport();
                 const r = await fetchReservationByTeamReport();
@@ -177,14 +179,14 @@ export default function VehicleReports() {
                 if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
                 if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
                 if (r?.success) setReservationByTeam(transformReservation(r.data, year));
-            };
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-            loadReports();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
+        loadReports();
     }, [year]);
     return (
         <div className="flex h-screen max-w-screen">

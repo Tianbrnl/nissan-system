@@ -56,12 +56,14 @@ export const getReservationByTeamMonthly = async () => {
     attributes: [
       "teamId",
       [reservationDateExpression, "reservedDate"],
-      [Sequelize.fn("COUNT", Sequelize.col("teamId")), "total"]
+      [Sequelize.col("team.teamCode"), "teamCode"],
+      [Sequelize.col("team.teamLeader"), "teamLeader"],
+      [Sequelize.fn("COUNT", Sequelize.col("pipeline.id")), "total"]
     ],
     include: [
       {
         model: Teams,
-        attributes: ["teamCode", "teamLeader"]
+        attributes: []
       }
     ],
 
@@ -73,7 +75,8 @@ export const getReservationByTeamMonthly = async () => {
       }
     },
     group: ["teamId", reservationDateExpression, "team.id", "team.teamCode", "team.teamLeader"],
-    order: [[reservationDateExpression, "ASC"]]
+    order: [[reservationDateExpression, "ASC"]],
+    raw: true
   });
 
   return {
