@@ -2,6 +2,30 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
+const normalizeMonthYearParam = (monthYear) => {
+    if (typeof monthYear !== 'string') {
+        return undefined;
+    }
+
+    const trimmedMonthYear = monthYear.trim();
+
+    if (!/^\d{4}-\d{2}$/.test(trimmedMonthYear)) {
+        return undefined;
+    }
+
+    return trimmedMonthYear;
+};
+
+const normalizeYearParam = (year) => {
+    const parsedYear = Number(year);
+
+    if (!Number.isInteger(parsedYear) || parsedYear < 1000 || parsedYear > 9999) {
+        return undefined;
+    }
+
+    return parsedYear;
+};
+
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotals = async () => {
     try {
@@ -20,7 +44,7 @@ export const fetchDashboardTotals = async () => {
 export const paymentTermDistribution = async (monthYear) => {
     try {
         const response = await axios.get(`${API_URL}/api/dashboard/paymentTermDistribution`, {
-            params: { monthYear }
+            params: { monthYear: normalizeMonthYearParam(monthYear) }
         });
         return response.data;
     } catch (error) {
@@ -36,7 +60,7 @@ export const paymentTermDistribution = async (monthYear) => {
 export const reservationByTeam = async (monthYear) => {
     try {
         const response = await axios.get(`${API_URL}/api/dashboard/reservationByTeam`, {
-            params: { monthYear }
+            params: { monthYear: normalizeMonthYearParam(monthYear) }
         });
         return response.data;
     } catch (error) {
@@ -52,7 +76,7 @@ export const reservationByTeam = async (monthYear) => {
 export const fetchMonthlySoldTrend = async (year) => {
     try {
         const response = await axios.get(`${API_URL}/api/dashboard/monthlySoldTrend`, {
-            params: { year }
+            params: { year: normalizeYearParam(year) }
         });
         return response.data;
     } catch (error) {
@@ -69,7 +93,7 @@ export const fetchMonthlySoldTrend = async (year) => {
 export const fetchApplicationSold = async (year) => {
     try {
         const response = await axios.get(`${API_URL}/api/dashboard/applicationSold`, {
-            params: { year }
+            params: { year: normalizeYearParam(year) }
         });
         return response.data;
     } catch (error) {
