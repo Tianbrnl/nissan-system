@@ -184,6 +184,7 @@ export default function Team() {
             {showMembers && selectedTeam && (
                 <ViewTeamMembers
                     team={selectedTeam}
+                    monthYear={monthYear}
                     onClose={() => setShowMembers(false)}
                 />
             )}
