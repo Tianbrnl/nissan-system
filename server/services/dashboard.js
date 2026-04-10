@@ -39,8 +39,8 @@ const parseDashboardYear = (selectedYear) => {
 const paymentTermLabelMap = {
     CASH: "Cash",
     FINANCING: "Financing",
-    "BANK OP": "Bank OP",
-    "BANK PO": "Bank OP"
+    "BANK OP": "Bank PO",
+    "BANK PO": "Bank PO"
 };
 
 const dashboardReportDateExpression = Sequelize.fn(
@@ -152,7 +152,7 @@ export const paymentTermDistributionService = async (monthYear) => {
         const paymentTotals = {
             Cash: 0,
             Financing: 0,
-            "Bank OP": 0
+            "Bank PO": 0
         };
 
         groupedTransactions.forEach((item) => {
@@ -171,7 +171,7 @@ export const paymentTermDistributionService = async (monthYear) => {
             paymentTerm: [
                 { name: 'Cash', data: paymentTotals.Cash },
                 { name: 'Financing', data: paymentTotals.Financing },
-                { name: 'Bank OP', data: paymentTotals["Bank OP"] }
+                { name: 'Bank PO', data: paymentTotals["Bank PO"] }
             ],
             selectedYear,
             selectedMonth
