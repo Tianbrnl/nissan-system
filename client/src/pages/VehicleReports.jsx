@@ -119,6 +119,27 @@ const transformReservation = (data, year) => {
     };
 };
 
+const getAvailableReportYears = (datasets = []) => {
+    const years = new Set();
+
+    datasets.forEach(({ rows = [], dateKey }) => {
+        rows.forEach((item) => {
+            const value = item?.[dateKey];
+            if (!value) return;
+
+            const date = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+                ? new Date(`${value}T00:00:00`)
+                : new Date(value);
+
+            if (!Number.isNaN(date.getTime())) {
+                years.add(date.getFullYear());
+            }
+        });
+    });
+
+    return Array.from(years).sort((a, b) => b - a);
+};
+
 export default function VehicleReports() {
 
     const [isLoading, setIsLoading] = useState(false);
@@ -176,9 +197,23 @@ export default function VehicleReports() {
                 const p = await fetchPaymentTermReport();
                 const r = await fetchReservationByTeamReport();
 
-                if (v?.success) setVehicleSales(transformVehicleSales(v.data, year));
-                if (p?.success) setPaymentTerm(transformPaymentTerm(p.data, year));
-                if (r?.success) setReservationByTeam(transformReservation(r.data, year));
+                const vehicleRows = v?.data ?? [];
+                const paymentRows = p?.data ?? [];
+                const reservationRows = r?.data ?? [];
+                const availableYears = getAvailableReportYears([
+                    { rows: vehicleRows, dateKey: "targetReleaseDate" },
+                    { rows: paymentRows, dateKey: "targetReleaseDate" },
+                    { rows: reservationRows, dateKey: "reservedDate" }
+                ]);
+
+                if (availableYears.length > 0 && !availableYears.includes(year)) {
+                    setYear(availableYears[0]);
+                    return;
+                }
+
+                if (v?.success) setVehicleSales(transformVehicleSales(vehicleRows, year));
+                if (p?.success) setPaymentTerm(transformPaymentTerm(paymentRows, year));
+                if (r?.success) setReservationByTeam(transformReservation(reservationRows, year));
             } catch (error) {
                 console.error(error);
             } finally {
@@ -399,7 +434,7 @@ export default function VehicleReports() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {reservationByTeam?.teams?.map(team => (
+                                {reservationByTeam?.teams?.length > 0 ? reservationByTeam.teams.map(team => (
                                     <tr key={team.id}>
                                         <td className="rowHeader">{team?.name}</td>
                                         {team?.data?.map((d, index) => (
@@ -407,7 +442,13 @@ export default function VehicleReports() {
                                         ))}
                                         <td className="rowFooter">{team.data.reduce((sum, value) => sum + value, 0)}</td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr>
+                                        <td colSpan={14} className="py-6 text-center text-nissan-gray">
+                                            No reservation data found for {year}.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                             <tfoot>
                                 <tr>
