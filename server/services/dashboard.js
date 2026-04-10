@@ -1,6 +1,41 @@
 import { Pipelines, Teams } from "../models/index.js";
 import { Op, fn, col, literal, Sequelize } from "sequelize";
 
+const getCurrentMonthYear = () => ({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1
+});
+
+const parseDashboardMonthYear = (monthYear) => {
+    if (typeof monthYear !== "string") {
+        return getCurrentMonthYear();
+    }
+
+    const trimmedMonthYear = monthYear.trim();
+
+    if (!/^\d{4}-\d{2}$/.test(trimmedMonthYear)) {
+        return getCurrentMonthYear();
+    }
+
+    const [year, month] = trimmedMonthYear.split("-").map(Number);
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+        return getCurrentMonthYear();
+    }
+
+    return { year, month };
+};
+
+const parseDashboardYear = (selectedYear) => {
+    const parsedYear = Number(selectedYear);
+
+    if (!Number.isInteger(parsedYear) || parsedYear < 1000 || parsedYear > 9999) {
+        return new Date().getFullYear();
+    }
+
+    return parsedYear;
+};
+
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotalService = async () => {
     try {
@@ -16,7 +51,7 @@ export const fetchDashboardTotalService = async () => {
         totals.totalSales = await Pipelines.count({
             where: {
                 availedAt: {
-                    [Op.ne]: '0000-00-00'
+                    [Op.not]: null
                 },
             }
         });
@@ -30,7 +65,7 @@ export const fetchDashboardTotalService = async () => {
                     [Op.gte]: startOfYear
                 },
                 availedAt: {
-                    [Op.ne]: '0000-00-00'
+                    [Op.not]: null
                 }
             },
         });
@@ -39,7 +74,7 @@ export const fetchDashboardTotalService = async () => {
         totals.totalReservation = await Pipelines.count({
             where: {
                 reservedAt: {
-                    [Op.ne]: '0000-00-00'
+                    [Op.not]: null
                 },
             }
         });
@@ -48,7 +83,7 @@ export const fetchDashboardTotalService = async () => {
         const totalApplied = await Pipelines.count({
             where: {
                 appliedAt: {
-                    [Op.ne]: '0000-00-00'
+                    [Op.not]: null
                 }
             }
         });
@@ -57,7 +92,7 @@ export const fetchDashboardTotalService = async () => {
         const totalApproved = await Pipelines.count({
             where: {
                 approvedAppliedAt: {
-                    [Op.ne]: '0000-00-00'
+                    [Op.not]: null
                 }
             }
         });
@@ -82,9 +117,7 @@ export const fetchDashboardTotalService = async () => {
 // PAYMENT TERM DISTRIBUTION
 export const paymentTermDistributionService = async (monthYear) => {
     try {
-        const [year, month] = String(monthYear || "").split("-").map(Number);
-        const selectedYear = year || new Date().getFullYear();
-        const selectedMonth = month || new Date().getMonth() + 1;
+        const { year: selectedYear, month: selectedMonth } = parseDashboardMonthYear(monthYear);
         const monthFilter = {
             [Op.and]: [
                 Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("monthStart")), selectedYear),
@@ -135,9 +168,7 @@ export const paymentTermDistributionService = async (monthYear) => {
 // RESERVATION BY TEAM
 export const reservationByTeamService = async (monthYear) => {
     try {
-        const [year, month] = String(monthYear || "").split("-").map(Number);
-        const selectedYear = year || new Date().getFullYear();
-        const selectedMonth = month || new Date().getMonth() + 1;
+        const { year: selectedYear, month: selectedMonth } = parseDashboardMonthYear(monthYear);
 
         const result = await Pipelines.findAll({
             attributes: [
@@ -156,7 +187,7 @@ export const reservationByTeamService = async (monthYear) => {
                 [Op.and]: [
                     {
                         reservedAt: {
-                            [Op.ne]: '0000-00-00'
+                            [Op.not]: null
                         }
                     },
                     Sequelize.where(Sequelize.fn("YEAR", Sequelize.col("reservedAt")), selectedYear),
@@ -192,7 +223,7 @@ export const reservationByTeamService = async (monthYear) => {
 export const monthlySoldTrendService = async (selectedYear = new Date().getFullYear()) => {
     try {
 
-        const currentYear = Number(selectedYear);
+        const currentYear = parseDashboardYear(selectedYear);
         const previousYear = currentYear - 1;
 
         const results = await Pipelines.findAll({
@@ -262,7 +293,7 @@ export const monthlySoldTrendService = async (selectedYear = new Date().getFullY
 export const applicationSoldService = async (selectedYear = new Date().getFullYear()) => {
     try {
 
-        const currentYear = Number(selectedYear);
+        const currentYear = parseDashboardYear(selectedYear);
 
         const results = await Pipelines.findAll({
             attributes: [

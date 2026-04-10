@@ -9,6 +9,15 @@ import { useState } from "react";
 import ApplicationSold from "../components/ApplicationSold";
 import Input from "../components/ui/Input";
 
+const getSafeMonthYear = (value) => {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}$/.test(value)) {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    return value;
+};
+
 export default function Dashboard() {
 
     const today = new Date();
@@ -16,16 +25,17 @@ export default function Dashboard() {
     const thisMonth = today.getMonth() + 1;
     const formattedMonth = `${thisYear}-${thisMonth.toString().padStart(2, '0')}`;
     const [monthYear, setMonthYear] = useState(formattedMonth);
-    const selectedYear = Number(monthYear.substring(0, 4));
+    const safeMonthYear = getSafeMonthYear(monthYear);
+    const selectedYear = Number(safeMonthYear.substring(0, 4));
     const [teams, setTeams] = useState([]);
-    const selectedMonthLabel = new Date(`${monthYear}-01`).toLocaleString("en-US", {
+    const selectedMonthLabel = new Date(`${safeMonthYear}-01`).toLocaleString("en-US", {
         month: "long",
         year: "numeric",
     });
 
     useEffect(() => {
         const loadReservationByTeam = async () => {
-            const { success, message, teams: apiTeams } = await reservationByTeam(monthYear);
+            const { success, message, teams: apiTeams } = await reservationByTeam(safeMonthYear);
             if (success) {
                 setTeams(apiTeams);
                 return;
@@ -35,7 +45,7 @@ export default function Dashboard() {
         };
 
         loadReservationByTeam();
-    }, [monthYear]);
+    }, [safeMonthYear]);
 
     return (
         <div className="flex h-screen max-w-screen">
@@ -81,7 +91,7 @@ export default function Dashboard() {
                 <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
                     <p className="text-lg font-semibold">Payment Term Distribution {selectedMonthLabel}</p>
                     <div className="h-70">
-                        <PaymentTermDistribution monthYear={monthYear} />
+                        <PaymentTermDistribution monthYear={safeMonthYear} />
                     </div>
                 </div>
                 <div className="p-4 space-y-4 rounded-xl border border-gray-300 overflow-hidden">
