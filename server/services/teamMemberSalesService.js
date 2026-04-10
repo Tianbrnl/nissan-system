@@ -2,6 +2,7 @@ import { Op, Sequelize } from "sequelize";
 import { Pipelines, TeamMembers, Teams } from "../models/index.js";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const RELEASE_COUNT_STATUSES = ["Sold", "For Release"];
 
 const createEmptyMonthlyCounts = () =>
     MONTH_LABELS.map((label, index) => ({
@@ -54,7 +55,9 @@ export const readTeamMemberYearlySalesService = async (memberId, year) => {
             ],
             where: {
                 memberId: parsedMemberId,
-                status: "Sold",
+                status: {
+                    [Op.in]: RELEASE_COUNT_STATUSES
+                },
                 targetReleased: {
                     [Op.gte]: `${parsedYear}-01-01`,
                     [Op.lt]: `${parsedYear + 1}-01-01`

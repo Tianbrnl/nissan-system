@@ -4,6 +4,8 @@ import { sequelize } from "../config/sequelize.js";
 import { capitalizeEachWord, removeUnnecessarySpaces } from "../utils/format.js";
 import { Op } from "sequelize";
 
+const RELEASE_COUNT_STATUSES = ["Sold", "For Release"];
+
 const normalizeMemberPayload = (members = []) => {
     if (!Array.isArray(members)) {
         return [];
@@ -103,6 +105,9 @@ const buildTeamInclude = (monthYear) => {
                 ...(monthDateRange
                     ? {
                         where: {
+                            status: {
+                                [Op.in]: RELEASE_COUNT_STATUSES
+                            },
                             targetReleased: {
                                 [Op.between]: [monthDateRange.monthStart, monthDateRange.monthEnd]
                             }
