@@ -77,6 +77,30 @@ const normalizeOptionalDate = (value) => {
     return trimmedValue;
 };
 
+const normalizeOptionalInteger = (value) => {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    if (typeof value === "string") {
+        const trimmedValue = value.trim();
+
+        if (!trimmedValue) {
+            return null;
+        }
+
+        const parsedValue = Number.parseInt(trimmedValue, 10);
+
+        return Number.isNaN(parsedValue) ? null : parsedValue;
+    }
+
+    if (typeof value === "number") {
+        return Number.isInteger(value) ? value : null;
+    }
+
+    return null;
+};
+
 // CREATE PIPELINE
 export const createPipelineService = async (
     targetReleased,
@@ -105,6 +129,7 @@ export const createPipelineService = async (
         const normalizedApprovedAppliedAt = normalizeOptionalDate(approvedAppliedAt);
         const normalizedApprovedNotAppliedAt = normalizeOptionalDate(approvedNotAppliedAt);
         const normalizedAvailedAt = normalizeOptionalDate(availedAt);
+        const normalizedReservationAmount = normalizeOptionalInteger(reservationAmount);
         const normalizedReservedAt = normalizeOptionalDate(reservedAt);
 
         if (
@@ -162,7 +187,7 @@ export const createPipelineService = async (
             approvedAppliedAt: normalizedApprovedAppliedAt,
             approvedNotAppliedAt: normalizedApprovedNotAppliedAt,
             availedAt: normalizedAvailedAt,
-            reservationAmount,
+            reservationAmount: normalizedReservationAmount,
             reservedAt: normalizedReservedAt
         });
 
@@ -435,6 +460,7 @@ export const updatePipelineService = async (
         const normalizedApprovedAppliedAt = normalizeOptionalDate(approvedAppliedAt);
         const normalizedApprovedNotAppliedAt = normalizeOptionalDate(approvedNotAppliedAt);
         const normalizedAvailedAt = normalizeOptionalDate(availedAt);
+        const normalizedReservationAmount = normalizeOptionalInteger(reservationAmount);
         const normalizedReservedAt = normalizeOptionalDate(reservedAt);
 
         if (
@@ -488,7 +514,7 @@ export const updatePipelineService = async (
             approvedAppliedAt: normalizedApprovedAppliedAt,
             approvedNotAppliedAt: normalizedApprovedNotAppliedAt,
             availedAt: normalizedAvailedAt,
-            reservationAmount,
+            reservationAmount: normalizedReservationAmount,
             reservedAt: normalizedReservedAt
         }, {
             where: { id: pipelineId }
