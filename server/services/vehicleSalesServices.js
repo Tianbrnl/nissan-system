@@ -54,17 +54,18 @@ export const getReservationByTeamMonthly = async () => {
     attributes: [
       "id",
       "teamId",
-      "reservedAt",
+      [Sequelize.cast(Sequelize.col("reservedAt"), "CHAR"), "reservedDate"],
       [Sequelize.literal("1"), "total"]
     ],
     where: {
       [Op.and]: [
         Sequelize.literal("teamId IS NOT NULL"),
         Sequelize.literal("reservedAt IS NOT NULL"),
-        Sequelize.literal("reservedAt <> '0000-00-00'")
+        Sequelize.literal("CAST(reservedAt AS CHAR) <> '0000-00-00'"),
+        Sequelize.literal("CAST(reservedAt AS CHAR) <> 'Invalid date'")
       ]
     },
-    order: [["reservedAt", "ASC"]],
+    order: [[Sequelize.literal("CAST(reservedAt AS CHAR)"), "ASC"]],
     raw: true
   });
 
@@ -85,7 +86,6 @@ export const getReservationByTeamMonthly = async () => {
 
     return {
       ...row,
-      reservedDate: row.reservedAt,
       teamCode: team?.teamCode ?? null,
       teamLeader: team?.teamLeader ?? null,
       team
