@@ -9,7 +9,7 @@ import { Trash2 } from "lucide-react";
 import { deleteUnit, selectReadAllVariant, selectReadUnitVariant, updateVariant } from "../../services/variantServices";
 import Input from "../ui/Input";
 
-export default function UpdateVariant({ onClose = () => { }, runAfter = () => { } }) {
+export default function UpdateVariant({ initialVariantId = '', onClose = () => { }, runAfter = () => { } }) {
 
     const [variants, setVariants] = useState([]);
     const [existingUnits, setExistingUnits] = useState([]);
@@ -56,6 +56,15 @@ export default function UpdateVariant({ onClose = () => { }, runAfter = () => { 
             setIsDeletingUnitId(null);
         }
     };
+
+    useEffect(() => {
+        if (initialVariantId === '' || initialVariantId === null || initialVariantId === undefined) return;
+
+        setFormData(prev => ({
+            ...prev,
+            variantId: String(initialVariantId)
+        }));
+    }, [initialVariantId]);
 
     useEffect(() => {
         try {

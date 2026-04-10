@@ -1,4 +1,4 @@
-import { Pipelines, Teams, Units } from "../models/index.js";
+import { Pipelines, Teams, Units, Variants } from "../models/index.js";
 import { Op, Sequelize } from "sequelize";
 
 const reportDateExpression = Sequelize.fn(
@@ -11,18 +11,34 @@ const reportDateExpression = Sequelize.fn(
 export const getVehicleSalesByUnitsMonthly = async () => {
   const result = await Pipelines.findAll({
     attributes: [
-      "unitId",
+      [Sequelize.col("unit.variantId"), "variantId"],
+      [Sequelize.col("unit.variant.name"), "variantName"],
       [reportDateExpression, "targetReleaseDate"],
       [Sequelize.fn("COUNT", Sequelize.col("pipeline.unitId")), "total"]
     ],
     include: [
       {
         model: Units,
-        attributes: ["id", "name"]
+        attributes: [],
+        include: [
+          {
+            model: Variants,
+            attributes: ["id", "name"]
+          }
+        ]
       }
     ],
-    group: ["unitId", reportDateExpression, "unit.id", "unit.name"],
-    order: [[reportDateExpression, "ASC"]]
+    group: [
+      "unit.variantId",
+      "unit->variant.id",
+      "unit->variant.name",
+      reportDateExpression
+    ],
+    order: [
+      [Sequelize.col("unit.variantId"), "ASC"],
+      [reportDateExpression, "ASC"]
+    ],
+    raw: true
   });
 
   return {

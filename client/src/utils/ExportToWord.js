@@ -105,8 +105,8 @@ export const createVehicleSalesByUnitsExport = (data, year) => {
   const totals = data?.totals ?? [];
 
   return {
-    title: `Vehicle Sales by Units (Monthly) - ${year ?? ""}`,
-    headers: ["UNITS", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL"],
+    title: `Vehicle Sales by Model (Monthly) - ${year ?? ""}`,
+    headers: ["MODEL", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL"],
     rows: [
       ...buildMonthlyReportRows(
         vehicles,

@@ -1,10 +1,9 @@
-import { EllipsisVertical, FileDown, Pen, Plus, SquarePen, Trash2 } from "lucide-react";
+import { EllipsisVertical, FileDown, Pen, Plus, SquarePen } from "lucide-react";
 import Sidemenu from "../components/Sidemenu";
 import { PageSubTitle, PageTitle } from "../components/ui/ui-labels";
 import { useState, useEffect } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CreateVariant from "../components/VehicleReports/CreateVariant";
-import UpdateUnit from "../components/VehicleReports/UpdateUnit";
 import UpdateVariant from "../components/VehicleReports/UpdateVariant";
 import {
     createPaymentTermMonthlyExport,
@@ -25,22 +24,22 @@ const transformVehicleSales = (data, year) => {
     const totals = Array(months).fill(0);
 
     data.forEach(item => {
-        const unitId = item.unitId ?? item.unit?.id ?? item.Unit?.id ?? item.id;
-        const unit = item.unitName || item.unit?.name || item.Unit?.name || item.unit;
+        const variantId = item.variantId ?? item.unit?.variantId ?? item.unit?.variant?.id ?? item.Unit?.variantId ?? item.Unit?.variant?.id ?? item.id;
+        const variantName = item.variantName || item.unit?.variant?.name || item.Unit?.variant?.name || item.unit?.name || item.Unit?.name;
         const monthIndex = getMonthIndex(item.targetReleaseDate, year);
         const total = toNumber(item.total ?? 1);
 
-        if (monthIndex === -1) return;
+        if (monthIndex === -1 || !variantName) return;
 
-        if (!map[unitId]) {
-            map[unitId] = {
-                id: unitId,
-                name: unit,
+        if (!map[variantId ?? variantName]) {
+            map[variantId ?? variantName] = {
+                id: variantId ?? variantName,
+                name: variantName,
                 data: Array(months).fill(0)
             };
         }
 
-        map[unitId].data[monthIndex] += total;
+        map[variantId ?? variantName].data[monthIndex] += total;
         totals[monthIndex] += total;
     });
 
@@ -150,10 +149,9 @@ export default function VehicleReports() {
 
     const [showCreateVariant, setShowCreateVariant] = useState(false);
     const [showUpdateVariant, setShowUpdateVariant] = useState(false);
-    const [showUpdateUnit, setShowUpdateUnit] = useState(false);
     const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
-    const [unitId, setUnitId] = useState(null);
+    const [selectedVariantId, setSelectedVariantId] = useState('');
     const [vehicleSales, setVehicleSales] = useState({ vehicles: [], totals: [] });
     const [paymentTerm, setPaymentTerm] = useState({ payment: [], totals: [] });
     const [reservationByTeam, setReservationByTeam] = useState({ teams: [], totals: [] });
@@ -166,8 +164,8 @@ export default function VehicleReports() {
     };
 
     const handleEditModel = (modelId) => {
-        setUnitId(modelId);
-        setShowUpdateUnit(true);
+        setSelectedVariantId(modelId);
+        setShowUpdateVariant(true);
     }
 
     const handleExportAll = async () => {
@@ -282,7 +280,7 @@ export default function VehicleReports() {
                 {/* Vehicle Sales by Model (Monthly) */}
                 <div className="rounded-xl border border-gray-300 overflow-hidden">
                     <div className="flex justify-between items-center p-4 border-b border-gray-300">
-                        <p className="text-lg font-semibold">Vehicle Sales by Units (Monthly) - {year}</p>
+                        <p className="text-lg font-semibold">Vehicle Sales by Model (Monthly) - {year}</p>
                         <div className="flex gap-2">
                             <button
                                 className="btn rounded-xl"
@@ -292,7 +290,10 @@ export default function VehicleReports() {
                             </button>
                             <button
                                 className="btn rounded-xl"
-                                onClick={() => setShowUpdateVariant(true)}
+                                onClick={() => {
+                                    setSelectedVariantId('');
+                                    setShowUpdateVariant(true);
+                                }}
                             >
                                 <Pen size={16} />
                             </button>
@@ -304,7 +305,7 @@ export default function VehicleReports() {
                         <table>
                             <thead>
                                 <tr>
-                                    <td className="rowHeader">UNITS</td>
+                                    <td className="rowHeader">MODEL</td>
                                     {dates?.map((date, index) => (
                                         <td key={index}>{date?.name}</td>
                                     ))}
@@ -468,11 +469,16 @@ export default function VehicleReports() {
             {/* Create Variant */}
             {showCreateVariant && <CreateVariant onClose={() => setShowCreateVariant(false)} />}
 
-            {/* Update Unit */}
-            {showUpdateVariant && <UpdateVariant onClose={() => setShowUpdateVariant(false)} />}
-
-            {/* Update Unit */}
-            {showUpdateUnit && <UpdateUnit unitId={unitId} onClose={() => setShowUpdateUnit(false)} />}
+            {/* Update Variant */}
+            {showUpdateVariant && (
+                <UpdateVariant
+                    initialVariantId={selectedVariantId}
+                    onClose={() => {
+                        setShowUpdateVariant(false);
+                        setSelectedVariantId('');
+                    }}
+                />
+            )}
 
         </div>
     )
