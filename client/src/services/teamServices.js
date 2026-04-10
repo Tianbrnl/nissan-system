@@ -60,6 +60,22 @@ export const readTeamMembers = async (teamId) => {
     }
 };
 
+// READ TEAM MEMBER SALES SUMMARY
+export const readMemberSalesSummary = async (memberId, year) => {
+    try {
+        const response = await axios.get(`${API_URL}/api/team/member-sales/${memberId}`, {
+            params: { year }
+        });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: error.response?.data?.message || 'Failed to read member sales summary'
+        };
+    }
+};
+
 // READ ONE TEAM
 export const readOneTeam = async (teamId) => {
     try {
