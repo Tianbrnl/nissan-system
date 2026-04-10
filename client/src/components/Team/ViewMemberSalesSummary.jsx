@@ -57,7 +57,7 @@ export default function ViewMemberSalesSummary({
                 <div className="space-y-6">
                     <ModalHeader
                         icon={BarChart3}
-                        title={`${member?.memberName || "NMP"} Sold Summary`}
+                        title={`${member?.memberName || "NMP"} Release Summary`}
                         subTitle={`${summary?.teamCode || "-"}${summary?.teamLeader ? ` | ${summary.teamLeader}` : ""} | ${summary?.year || monthYear?.split("-")?.[0] || ""}`}
                         onClose={onClose}
                     />
@@ -78,7 +78,7 @@ export default function ViewMemberSalesSummary({
                         <>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="rounded-xl border border-gray-300 p-4 space-y-2">
-                                    <p className="text-sm text-gray-500">Total Sold</p>
+                                    <p className="text-sm text-gray-500">Total Release</p>
                                     <p className="text-3xl font-semibold text-nissan-black">{summary?.totalSold ?? 0}</p>
                                 </div>
                                 <div className="rounded-xl bg-nissan-red p-4 text-white space-y-2">
