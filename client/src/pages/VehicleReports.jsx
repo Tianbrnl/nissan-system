@@ -97,7 +97,7 @@ const transformReservation = (data, year) => {
             teamCode ||
             "Unknown";
         const monthIndex = getMonthIndex(item.reservedDate, year);
-        const total = toNumber(item.total);
+        const total = toNumber(item.total ?? 1);
 
         if (monthIndex === -1) return;
 

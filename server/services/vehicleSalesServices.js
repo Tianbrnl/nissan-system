@@ -54,29 +54,25 @@ export const getPaymentTermMonthly = async () => {
 export const getReservationByTeamMonthly = async () => {
   const result = await Pipelines.findAll({
     attributes: [
+      "id",
       "teamId",
       [reservationDateExpression, "reservedDate"],
-      [Sequelize.col("team.teamCode"), "teamCode"],
-      [Sequelize.col("team.teamLeader"), "teamLeader"],
-      [Sequelize.fn("COUNT", Sequelize.col("pipeline.id")), "total"]
+      [Sequelize.literal("1"), "total"]
     ],
     include: [
       {
         model: Teams,
-        attributes: []
+        attributes: ["id", "teamCode", "teamLeader"],
+        required: false
       }
     ],
-
-
     where: {
       reservedAt: {
         [Op.not]: null,
         [Op.ne]: "0000-00-00"
       }
     },
-    group: ["teamId", reservationDateExpression, "team.id", "team.teamCode", "team.teamLeader"],
-    order: [[reservationDateExpression, "ASC"]],
-    raw: true
+    order: [[reservationDateExpression, "ASC"]]
   });
 
   return {
