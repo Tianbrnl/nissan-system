@@ -49,6 +49,13 @@ const dashboardReportDateExpression = Sequelize.fn(
     Sequelize.col("monthStart")
 );
 
+const dashboardReleaseDateColumn = Sequelize.col("targetReleased");
+
+const DASHBOARD_MONTHS = [
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+];
+
 // FETCH DASHBOARD TOTALS
 export const fetchDashboardTotalService = async () => {
     try {
@@ -249,8 +256,8 @@ export const monthlySoldTrendService = async (selectedYear = new Date().getFullY
 
         const results = await Pipelines.findAll({
             attributes: [
-                [Sequelize.fn("YEAR", Sequelize.col("monthStart")), "year"],
-                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "month"],
+                [Sequelize.fn("YEAR", dashboardReleaseDateColumn), "year"],
+                [Sequelize.fn("MONTH", dashboardReleaseDateColumn), "month"],
                 [
                     Sequelize.fn(
                         "SUM",
@@ -259,26 +266,28 @@ export const monthlySoldTrendService = async (selectedYear = new Date().getFullY
                     "sold"
                 ]
             ],
-            where: Sequelize.where(
-                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
-                { [Op.in]: [previousYear, currentYear] }
-            ),
+            where: {
+                targetReleased: {
+                    [Op.not]: null
+                },
+                [Op.and]: [
+                    Sequelize.where(
+                        Sequelize.fn("YEAR", dashboardReleaseDateColumn),
+                        { [Op.in]: [previousYear, currentYear] }
+                    )
+                ]
+            },
             group: [
-                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
-                Sequelize.fn("MONTH", Sequelize.col("monthStart"))
+                Sequelize.fn("YEAR", dashboardReleaseDateColumn),
+                Sequelize.fn("MONTH", dashboardReleaseDateColumn)
             ],
             order: [
-                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "ASC"]
+                [Sequelize.fn("MONTH", dashboardReleaseDateColumn), "ASC"]
             ],
             raw: true
         });
 
-        const months = [
-            "JAN","FEB","MAR","APR","MAY","JUN",
-            "JUL","AUG","SEP","OCT","NOV","DEC"
-        ];
-
-        const monthlySoldTrend = months.map(month => ({
+        const monthlySoldTrend = DASHBOARD_MONTHS.map(month => ({
             month,
             lastYear: 0,
             thisYear: 0
@@ -318,7 +327,7 @@ export const applicationSoldService = async (selectedYear = new Date().getFullYe
 
         const results = await Pipelines.findAll({
             attributes: [
-                [Sequelize.fn("MONTH", Sequelize.col("monthStart")), "month"],
+                [Sequelize.fn("MONTH", dashboardReleaseDateColumn), "month"],
                 [
                     Sequelize.fn(
                         "SUM",
@@ -334,22 +343,26 @@ export const applicationSoldService = async (selectedYear = new Date().getFullYe
                     "applications"
                 ]
             ],
-            where: Sequelize.where(
-                Sequelize.fn("YEAR", Sequelize.col("monthStart")),
-                currentYear
-            ),
-            group: [Sequelize.fn("MONTH", Sequelize.col("monthStart"))],
-            order: [[Sequelize.fn("MONTH", Sequelize.col("monthStart")), "ASC"]],
+            where: {
+                targetReleased: {
+                    [Op.not]: null
+                },
+                [Op.and]: [
+                    Sequelize.where(
+                        Sequelize.fn("YEAR", dashboardReleaseDateColumn),
+                        currentYear
+                    )
+                ]
+            },
+            group: [Sequelize.fn("MONTH", dashboardReleaseDateColumn)],
+            order: [[Sequelize.fn("MONTH", dashboardReleaseDateColumn), "ASC"]],
             raw: true
         });
 
-        const months = [
-            "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
-        ];
+        
 
         // default months (ensures JAN–DEC always exist)
-        const applicationSold = months.map((month) => ({
+        const applicationSold = DASHBOARD_MONTHS.map((month) => ({
             month,
             applications: 0,
             sold: 0
@@ -359,7 +372,7 @@ export const applicationSoldService = async (selectedYear = new Date().getFullYe
             const monthIndex = Number(row.month) - 1;
 
             applicationSold[monthIndex] = {
-                month: months[monthIndex],
+                month: DASHBOARD_MONTHS[monthIndex],
                 applications: Number(row.applications) || 0,
                 sold: Number(row.sold) || 0
             };
