@@ -120,8 +120,11 @@ export const readAllTeamPerformanceService = async (monthYear) => {
 
     // Parse monthYear into start and end dates
     const [year, month] = monthYear.split("-");
+    const parsedYear = Number(year);
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 1);
+    const yearStartDate = new Date(parsedYear, 0, 1);
+    const nextYearStartDate = new Date(parsedYear + 1, 0, 1);
 
     // Fetch units and teams
     const units = await Units.findAll({
@@ -150,6 +153,16 @@ export const readAllTeamPerformanceService = async (monthYear) => {
       },
       group: ["teamId", "unitId"],
       raw: true
+    });
+
+    const yearlyTotalUnitSold = await Pipelines.count({
+      where: {
+        status: "Sold",
+        targetReleased: {
+          [Op.gte]: yearStartDate,
+          [Op.lt]: nextYearStartDate
+        }
+      }
     });
 
     // Build sales map
@@ -202,7 +215,8 @@ export const readAllTeamPerformanceService = async (monthYear) => {
     return {
       success: true,
       teamPerformance,
-      unitTotals
+      unitTotals,
+      yearlyTotalUnitSold
     };
 
   } catch (error) {
