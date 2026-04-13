@@ -29,6 +29,7 @@ export default function VehicleSales() {
 
     const [totals, setTotals] = useState({
         totalUnitSold: 0,
+        totalYearUnitSold: 0,
         topTeam: {
             team: '',
             units: 0
@@ -44,6 +45,7 @@ export default function VehicleSales() {
             const load = async () => {
                 setTotals({
                     totalUnitSold: 0,
+                    totalYearUnitSold: 0,
                     topTeam: {
                         team: '',
                         units: 0
@@ -60,10 +62,14 @@ export default function VehicleSales() {
                 setGraphTotalUnits([]);
                 setUnitContributionPerTeam([]);
 
-                const { success, message, teamPerformance, unitTotals } = await fetchTeamPerformance(monthYear);
+                const { success, message, teamPerformance, unitTotals, yearlyTotalUnitSold } = await fetchTeamPerformance(monthYear);
                 if (success) {
 
                     if (unitTotals.length === 0) {
+                        setTotals((prev) => ({
+                            ...prev,
+                            totalYearUnitSold: yearlyTotalUnitSold ?? 0
+                        }));
                         return
                     }
 
@@ -90,6 +96,7 @@ export default function VehicleSales() {
 
                     setTotals({
                         totalUnitSold,
+                        totalYearUnitSold: yearlyTotalUnitSold ?? 0,
                         topTeam,
                         topUnit,
                     });
@@ -168,7 +175,12 @@ export default function VehicleSales() {
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Units Sold</p>
+                        <p className="text-sm">Total Units Sold in {monthYear?.split("-")?.[0]}</p>
+                        <h2 className="font-bold text-blue-600">{totals?.totalYearUnitSold}</h2>
+                    </div>
+
+                    <div className="border border-gray-300 rounded-xl p-4 space-y-2">
+                        <p className="text-sm">Total Units Sold of the Month</p>
                         <h2 className="font-bold">{totals?.totalUnitSold}</h2>
                     </div>
 
@@ -179,7 +191,7 @@ export default function VehicleSales() {
                     </div>
 
                     <div className="border border-gray-300 rounded-xl p-4 space-y-2">
-                        <p className="text-sm">Total Unit</p>
+                        <p className="text-sm">Top Unit Sold</p>
                         <h4 className="font-bold text-green-600">{totals?.topUnit?.unit}</h4>
                         <p className="text-gray-500 text-sm">{totals?.topUnit?.total} units</p>
                     </div>
