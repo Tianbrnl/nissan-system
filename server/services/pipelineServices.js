@@ -282,9 +282,29 @@ export const readAllPipelineService = async ({ page, limit, exportAll = false, m
         const andConditions = [];
 
         if (monthDateRange) {
-            where.targetReleased = {
-                [Op.between]: [monthDateRange.monthStart, monthDateRange.monthEnd]
-            };
+            andConditions.push({
+                [Op.or]: [
+                    {
+                        targetReleased: {
+                            [Op.between]: [monthDateRange.monthStart, monthDateRange.monthEnd]
+                        }
+                    },
+                    {
+                        [Op.and]: [
+                            {
+                                targetReleased: {
+                                    [Op.is]: null
+                                }
+                            },
+                            {
+                                monthStart: {
+                                    [Op.between]: [monthDateRange.monthStart, monthDateRange.monthEnd]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            });
         }
 
         if (normalizedSearch) {
@@ -454,7 +474,7 @@ export const updatePipelineService = async (
     reservedAt
 ) => {
     try {
-        const normalizedTargetReleased = normalizeOptionalDate(targetReleased) || normalizeOptionalDate(monthStart) || null;
+        const normalizedTargetReleased = normalizeOptionalDate(targetReleased);
         const normalizedMonthStart = normalizeOptionalDate(monthStart) || normalizedTargetReleased || null;
         const normalizedAppliedAt = normalizeOptionalDate(appliedAt);
         const normalizedApprovedAppliedAt = normalizeOptionalDate(approvedAppliedAt);

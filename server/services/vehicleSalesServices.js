@@ -1,11 +1,7 @@
 import { Pipelines, Teams, Units, Variants } from "../models/index.js";
 import { Op, Sequelize } from "sequelize";
 
-const reportDateExpression = Sequelize.fn(
-  "COALESCE",
-  Sequelize.col("pipeline.targetReleased"),
-  Sequelize.col("pipeline.monthStart")
-);
+const reportDateExpression = Sequelize.col("pipeline.targetReleased");
 
 // vehicleSales report
 export const getVehicleSalesByUnitsMonthly = async () => {
@@ -28,6 +24,11 @@ export const getVehicleSalesByUnitsMonthly = async () => {
         ]
       }
     ],
+    where: {
+      targetReleased: {
+        [Op.not]: null
+      }
+    },
     group: [
       "unit.variantId",
       "unit->variant.id",
@@ -54,6 +55,11 @@ export const getPaymentTermMonthly = async () => {
       [reportDateExpression, "targetReleaseDate"],
       [Sequelize.fn("COUNT", Sequelize.col("transaction")), "total"]
     ],
+    where: {
+      targetReleased: {
+        [Op.not]: null
+      }
+    },
     group: ["transaction", reportDateExpression],
     order: [[reportDateExpression, "ASC"]]
   });
