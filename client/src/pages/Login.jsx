@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { fetchUser, handleLogin } from "../services/userServices";
 import { UserContext } from "../context/AuthProvider";
 import { useContext, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
 
@@ -19,6 +20,7 @@ export default function Login() {
     });
 
     const [errorMessage, setErrorMessage] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async () => {
         try {
@@ -46,10 +48,21 @@ export default function Login() {
                         label="Password"
                         placeholder="Enter your password"
                         name="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         required={true}
                         value={formData.password}
                         onChange={handleInputChange}
+                        rightElement={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((visible) => !visible)}
+                                className="text-gray-500 hover:text-nissan-black active:text-nissan-black p-1"
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                aria-pressed={showPassword}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        }
                     />
 
                     {errorMessage &&
